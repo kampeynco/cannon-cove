@@ -39,7 +39,7 @@ export class Game {
 
         this.players = [
             this.createShip('You', COLORS.warmBrown, '#E74C3C', true, 0.15),
-            this.createShip('Cpt. Blackbeard', '#5C3A21', '#1A1A1A', false, 0.85),
+            this.createShip('Captain Blackbeard', '#5C3A21', '#1A1A1A', false, 0.85),
         ];
 
         this.input.onFire = (angle, power) => this.handleFire(angle, power);
@@ -151,14 +151,14 @@ export class Game {
 
         // Set player names based on mode
         if (mode === MODES.GHOST_FLEET) {
-            this.players[0].name = 'Cpt. Bones';
-            this.players[1].name = 'Cpt. Blackbeard';
+            this.players[0].name = 'Captain Bones';
+            this.players[1].name = 'Captain Blackbeard';
         } else if (mode === MODES.CREW_BATTLE) {
             this.players[0].name = 'Player 1';
             this.players[1].name = 'Player 2';
         } else {
             this.players[0].name = 'You';
-            this.players[1].name = 'Cpt. Blackbeard';
+            this.players[1].name = 'Captain Blackbeard';
         }
 
         this.players.forEach((p) => {
