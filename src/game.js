@@ -149,6 +149,18 @@ export class Game {
         this.vfx = [];
         this.sinkProgress = null;
 
+        // Set player names based on mode
+        if (mode === MODES.GHOST_FLEET) {
+            this.players[0].name = 'Cpt. Bones';
+            this.players[1].name = 'Cpt. Blackbeard';
+        } else if (mode === MODES.CREW_BATTLE) {
+            this.players[0].name = 'Player 1';
+            this.players[1].name = 'Player 2';
+        } else {
+            this.players[0].name = 'You';
+            this.players[1].name = 'Cpt. Blackbeard';
+        }
+
         this.players.forEach((p) => {
             p.hp = SHIP.maxHp;
             p.x = this.canvas.width * p.xRatio;

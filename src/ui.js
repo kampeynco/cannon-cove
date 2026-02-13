@@ -11,9 +11,9 @@ export class UIManager {
 
     createMenuButtons() {
         this.menuButtons = [
-            { id: 'duel', label: '⚔️  Duel', mode: MODES.DUEL, y: 0 },
-            { id: 'crew', label: '🏴‍☠️  Crew Battle', mode: MODES.CREW_BATTLE, y: 0 },
-            { id: 'ghost', label: '👻  Ghost Fleet', mode: MODES.GHOST_FLEET, y: 0 },
+            { id: 'duel', label: '⚔️  Duel', subtitle: 'Single Player vs AI', mode: MODES.DUEL, y: 0 },
+            { id: 'crew', label: '🏴‍☠️  Crew Battle', subtitle: 'Head to Head', mode: MODES.CREW_BATTLE, y: 0 },
+            { id: 'ghost', label: '👻  Ghost Fleet', subtitle: 'Watch AI Battle', mode: MODES.GHOST_FLEET, y: 0 },
         ];
     }
 
@@ -56,13 +56,13 @@ export class UIManager {
         }
 
         // Buttons — scale to fit
-        const btnWidth = compact ? 220 : 260;
-        const btnHeight = compact ? 40 : 52;
-        const btnGap = compact ? 10 : 16;
+        const btnWidth = compact ? 220 : 280;
+        const btnHeight = compact ? 48 : 66;
+        const btnGap = compact ? 8 : 12;
         const totalBtnHeight = this.menuButtons.length * btnHeight + (this.menuButtons.length - 1) * btnGap;
         const startY = compact
-            ? h * 0.42
-            : h / 2 - 5;
+            ? h * 0.38
+            : h / 2 - 15;
 
         this.menuButtons.forEach((btn, i) => {
             const by = startY + i * (btnHeight + btnGap);
@@ -79,11 +79,19 @@ export class UIManager {
             this.drawRoundedRect(cx - btnWidth / 2, by, btnWidth, btnHeight, 8);
             ctx.stroke();
 
+            // Button label
             ctx.fillStyle = isPrimary ? COLORS.deepOcean : COLORS.sailCream;
             ctx.font = `bold ${isPrimary ? (compact ? 16 : 20) : (compact ? 14 : 17)}px Inter, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(btn.label, cx, by + btnHeight / 2);
+            const labelY = compact ? by + btnHeight * 0.38 : by + btnHeight * 0.38;
+            ctx.fillText(btn.label, cx, labelY);
+
+            // Subtitle
+            ctx.fillStyle = isPrimary ? 'rgba(11, 29, 58, 0.6)' : 'rgba(245, 240, 232, 0.55)';
+            ctx.font = `${compact ? 10 : 12}px Inter, sans-serif`;
+            const subY = compact ? by + btnHeight * 0.75 : by + btnHeight * 0.72;
+            ctx.fillText(btn.subtitle, cx, subY);
         });
 
         // Footer
