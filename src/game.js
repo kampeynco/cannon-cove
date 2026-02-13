@@ -64,15 +64,15 @@ export class Game {
     }
 
     setupMenuClicks() {
-        this.canvas.addEventListener('click', (e) => {
+        const handleTap = (x, y) => {
             const rect = this.canvas.getBoundingClientRect();
             const scaleX = this.canvas.width / rect.width;
             const scaleY = this.canvas.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
+            const cx = (x - rect.left) * scaleX;
+            const cy = (y - rect.top) * scaleY;
 
             if (this.state === STATES.MENU) {
-                const mode = this.ui.getMenuClick(x, y);
+                const mode = this.ui.getMenuClick(cx, cy);
                 if (mode) {
                     this.audio.init();
                     this.audio.unlock();
@@ -80,7 +80,7 @@ export class Game {
                     this.startGame(mode);
                 }
             } else if (this.state === STATES.VICTORY) {
-                if (this.ui.isPlayAgainClick(x, y)) {
+                if (this.ui.isPlayAgainClick(cx, cy)) {
                     this.audio.playClick();
                     this.resetGame();
                 }
@@ -88,8 +88,42 @@ export class Game {
                 this.audio.toggle();
                 this.audio.playClick();
                 this.state = STATES.AIM;
+            } else if (this.state === STATES.AIM && !this.isCurrentPlayerAI()) {
+                // Fire button tap detection
+                const btnW = 90, btnH = 38;
+                const btnX = this.canvas.width / 2 - btnW / 2;
+                const btnY = this.canvas.height - 60;
+                if (cx >= btnX && cx <= btnX + btnW && cy >= btnY && cy <= btnY + btnH) {
+                    this.handleFire(this.input.angle, this.input.power);
+                }
             }
+        };
+
+        // Mouse click
+        this.canvas.addEventListener('click', (e) => {
+            handleTap(e.clientX, e.clientY);
         });
+
+        // Touch tap — fires on touchend for taps (short touches that don't drag)
+        let touchStartPos = null;
+        this.canvas.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            touchStartPos = { x: t.clientX, y: t.clientY };
+        }, { passive: true });
+
+        this.canvas.addEventListener('touchend', (e) => {
+            if (!touchStartPos) return;
+            const t = e.changedTouches[0];
+            const dx = t.clientX - touchStartPos.x;
+            const dy = t.clientY - touchStartPos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            touchStartPos = null;
+
+            // Only count as tap if finger didn't move much (< 15px)
+            if (dist < 15) {
+                handleTap(t.clientX, t.clientY);
+            }
+        }, { passive: true });
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
