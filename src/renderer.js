@@ -404,30 +404,75 @@ export class Renderer {
 
     drawFireEffect(x, y, time) {
         const { ctx } = this;
-        for (let i = 0; i < 3; i++) {
-            const flicker = Math.sin(time * 8 + i * 2) * 5;
-            const size = 6 + Math.sin(time * 10 + i) * 3;
-            ctx.fillStyle = i === 0 ? COLORS.fireGlow : COLORS.fire;
-            ctx.globalAlpha = 0.7 - i * 0.15;
+
+        // Flame glow (base light)
+        const glowGrad = ctx.createRadialGradient(x, y - 5, 2, x, y - 5, 18);
+        glowGrad.addColorStop(0, 'rgba(255, 200, 50, 0.4)');
+        glowGrad.addColorStop(1, 'rgba(255, 80, 0, 0)');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(x, y - 5, 18, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Multiple flame tongues
+        const tongues = 5;
+        for (let i = 0; i < tongues; i++) {
+            const phase = time * 12 + i * 1.3;
+            const sway = Math.sin(phase) * (3 + i);
+            const height = 12 + Math.sin(time * 8 + i * 2.5) * 6;
+            const width = 3 + Math.sin(time * 10 + i) * 1.5;
+            const offsetX = (i - tongues / 2) * 4 + sway * 0.5;
+
+            // Outer flame (orange-red)
+            ctx.globalAlpha = 0.65 - i * 0.06;
+            ctx.fillStyle = `hsl(${20 + i * 8}, 100%, ${50 + Math.sin(phase) * 10}%)`;
             ctx.beginPath();
-            ctx.ellipse(x + i * 5, y - flicker - i * 3, size, size * 1.5, 0, 0, Math.PI * 2);
+            ctx.moveTo(x + offsetX - width, y);
+            ctx.quadraticCurveTo(x + offsetX - width * 0.5 + sway, y - height * 0.6, x + offsetX + sway * 0.8, y - height);
+            ctx.quadraticCurveTo(x + offsetX + width * 0.5 + sway, y - height * 0.6, x + offsetX + width, y);
+            ctx.closePath();
+            ctx.fill();
+
+            // Inner flame (bright yellow core)
+            ctx.globalAlpha = 0.5 - i * 0.08;
+            ctx.fillStyle = `hsl(${45 + i * 5}, 100%, ${65 + Math.sin(phase * 1.3) * 10}%)`;
+            ctx.beginPath();
+            const innerW = width * 0.5;
+            const innerH = height * 0.65;
+            ctx.moveTo(x + offsetX - innerW, y);
+            ctx.quadraticCurveTo(x + offsetX + sway * 0.5, y - innerH, x + offsetX + innerW, y);
+            ctx.closePath();
             ctx.fill();
         }
+
+        // Hot sparks / embers
+        for (let i = 0; i < 4; i++) {
+            const sparkPhase = time * 6 + i * 1.7;
+            const sparkX = x + Math.sin(sparkPhase * 2) * 8;
+            const sparkY = y - 8 - ((sparkPhase * 15) % 25);
+            const sparkAlpha = 1 - ((sparkPhase * 15) % 25) / 25;
+            ctx.globalAlpha = sparkAlpha * 0.7;
+            ctx.fillStyle = '#FFDD44';
+            ctx.beginPath();
+            ctx.arc(sparkX, sparkY, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         ctx.globalAlpha = 1;
     }
 
     drawSmokeWisp(x, y, time) {
         const { ctx } = this;
-        for (let i = 0; i < 3; i++) {
-            const rise = Math.sin(time * 2 + i) * 3 - i * 8;
-            const drift = Math.cos(time * 1.5 + i * 3) * 4;
-            ctx.fillStyle = COLORS.smoke;
-            ctx.globalAlpha = 0.3 - i * 0.08;
+        for (let i = 0; i < 5; i++) {
+            const rise = -((time * 18 + i * 7) % 35);
+            const drift = Math.sin(time * 1.2 + i * 2) * (6 + i * 2);
+            const age = -rise / 35;
+            const size = 4 + age * 10;
+            ctx.fillStyle = `rgba(60, 55, 50, ${0.25 - age * 0.2})`;
             ctx.beginPath();
-            ctx.arc(x + drift, y + rise, 5 + i * 3, 0, Math.PI * 2);
+            ctx.arc(x + drift, y + rise, size, 0, Math.PI * 2);
             ctx.fill();
         }
-        ctx.globalAlpha = 1;
     }
 
     // ─── Projectile ─────────────────────────────
