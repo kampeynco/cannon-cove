@@ -660,6 +660,12 @@ export class Renderer {
         ctx.font = 'bold 16px Inter, sans-serif';
         const turnLabel = turnName === 'You' ? 'Your Turn' : `${turnName}'s Turn`;
         ctx.fillText(turnLabel, canvas.width / 2, 70);
+
+        // ESC hint (bottom-right)
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.3)';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('ESC = Pause', canvas.width - 16, canvas.height - 12);
     }
 
     drawPlayerHUD(x, y, player, alignLeft) {

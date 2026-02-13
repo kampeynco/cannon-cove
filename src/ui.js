@@ -228,21 +228,73 @@ export class UIManager {
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
 
-        ctx.fillStyle = 'rgba(5, 13, 26, 0.9)';
+        // Dim overlay
+        ctx.fillStyle = 'rgba(5, 13, 26, 0.92)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Title
         ctx.fillStyle = COLORS.sunsetGold;
-        ctx.font = 'bold 36px "Pirata One", Georgia, serif';
+        ctx.font = 'bold 32px "Pirata One", Georgia, serif';
         ctx.textAlign = 'center';
-        ctx.fillText("⚙️ Captain's Quarters", cx, cy - 100);
+        ctx.textBaseline = 'middle';
+        ctx.fillText("⚙️ Paused", cx, cy - 100);
 
-        ctx.fillStyle = COLORS.sailCream;
-        ctx.font = '16px Inter, sans-serif';
-        ctx.fillText(`Sound: ${settings.sound ? 'ON' : 'OFF'}  •  Click to toggle`, cx, cy - 40);
+        // Buttons
+        const btnWidth = 220;
+        const btnHeight = 48;
+        const btnGap = 14;
+        const startY = cy - 30;
 
-        ctx.fillText('Press ESC or click to return', cx, cy + 40);
+        this.pauseButtons = [];
 
-        this.settingsBounds = { x: 0, y: 0, w: canvas.width, h: canvas.height };
+        const buttons = [
+            { id: 'sound', label: `🔊 Sound: ${settings.sound ? 'ON' : 'OFF'}` },
+            { id: 'exit', label: '🚪 Exit to Menu' },
+            { id: 'resume', label: '▶️  Resume Game' },
+        ];
+
+        buttons.forEach((btn, i) => {
+            const by = startY + i * (btnHeight + btnGap);
+            const bounds = { x: cx - btnWidth / 2, y: by, w: btnWidth, h: btnHeight };
+
+            // Button background
+            const isResume = btn.id === 'resume';
+            const isExit = btn.id === 'exit';
+            ctx.fillStyle = isResume ? COLORS.sunsetGold : isExit ? '#8B2020' : COLORS.warmBrown;
+            this.drawRoundedRect(bounds.x, bounds.y, btnWidth, btnHeight, 8);
+            ctx.fill();
+
+            // Button border
+            ctx.strokeStyle = isResume ? '#D4941E' : isExit ? '#5C1010' : '#6B4226';
+            ctx.lineWidth = 2;
+            this.drawRoundedRect(bounds.x, bounds.y, btnWidth, btnHeight, 8);
+            ctx.stroke();
+
+            // Button label
+            ctx.fillStyle = isResume ? COLORS.deepOcean : COLORS.sailCream;
+            ctx.font = 'bold 16px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(btn.label, cx, by + btnHeight / 2);
+
+            this.pauseButtons.push({ ...btn, bounds });
+        });
+
+        // Hint
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.4)';
+        ctx.font = '12px Inter, sans-serif';
+        ctx.fillText('Press ESC to resume', cx, startY + buttons.length * (btnHeight + btnGap) + 20);
+    }
+
+    getPauseClick(x, y) {
+        if (!this.pauseButtons) return null;
+        for (const btn of this.pauseButtons) {
+            const b = btn.bounds;
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+                return btn.id;
+            }
+        }
+        return null;
     }
 
     drawFireButton(x, y) {

@@ -85,9 +85,17 @@ export class Game {
                     this.resetGame();
                 }
             } else if (this.state === STATES.SETTINGS) {
-                this.audio.toggle();
-                this.audio.playClick();
-                this.state = STATES.AIM;
+                const action = this.ui.getPauseClick(cx, cy);
+                if (action === 'sound') {
+                    this.audio.toggle();
+                    this.audio.playClick();
+                } else if (action === 'exit') {
+                    this.audio.playClick();
+                    this.resetGame();
+                } else if (action === 'resume') {
+                    this.audio.playClick();
+                    this.state = this._previousState || STATES.AIM;
+                }
             } else if (this.state === STATES.AIM && !this.isCurrentPlayerAI()) {
                 // Fire button tap detection
                 const btnW = 90, btnH = 38;
@@ -127,10 +135,11 @@ export class Game {
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (this.state === STATES.AIM) {
+                if (this.state === STATES.AIM || this.state === STATES.FLIGHT) {
+                    this._previousState = this.state;
                     this.state = STATES.SETTINGS;
                 } else if (this.state === STATES.SETTINGS) {
-                    this.state = STATES.AIM;
+                    this.state = this._previousState || STATES.AIM;
                 }
             }
         });
