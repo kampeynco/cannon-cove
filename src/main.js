@@ -16,9 +16,57 @@ function resize() {
     }
 }
 
+// ── Mobile orientation detection ──
+// Uses actual pixel dimensions instead of CSS orientation query
+// which is unreliable on many Android browsers
+function isMobileDevice() {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
+
+function checkOrientation() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const isPortrait = h > w;
+    const isMobile = isMobileDevice() && Math.min(w, h) < 500;
+
+    if (isMobile && isPortrait) {
+        document.body.classList.add('portrait-mode');
+    } else {
+        const wasPortrait = document.body.classList.contains('portrait-mode');
+        document.body.classList.remove('portrait-mode');
+        // Re-trigger resize when switching from portrait to landscape
+        // so canvas picks up the new dimensions
+        if (wasPortrait) {
+            setTimeout(resize, 100);
+        }
+    }
+}
+
 resize();
-window.addEventListener('resize', resize);
-window.addEventListener('orientationchange', () => setTimeout(resize, 150));
+checkOrientation();
+
+window.addEventListener('resize', () => {
+    resize();
+    checkOrientation();
+});
+
+// screen.orientation API — more reliable on Android than CSS
+if (screen.orientation) {
+    screen.orientation.addEventListener('change', () => {
+        setTimeout(() => {
+            resize();
+            checkOrientation();
+        }, 200);
+    });
+}
+
+// Fallback for older devices
+window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+        resize();
+        checkOrientation();
+    }, 300);
+});
 
 const game = new Game(canvas);
 window.game = game;
