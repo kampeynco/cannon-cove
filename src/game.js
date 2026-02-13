@@ -234,6 +234,7 @@ export class Game {
 
             if (target.hp <= 0) {
                 this.state = STATES.VICTORY;
+                this.endTime = performance.now();
                 this.sinkProgress = { ship: target, progress: 0 };
                 this.audio.playVictory();
                 return;
@@ -390,7 +391,7 @@ export class Game {
             this.ui.drawMenu();
         } else if (this.state === STATES.VICTORY) {
             const winner = this.players.find((p) => p.hp > 0);
-            const elapsed = ((performance.now() - this.startTime) / 1000);
+            const elapsed = ((this.endTime - this.startTime) / 1000);
             const mins = Math.floor(elapsed / 60);
             const secs = Math.floor(elapsed % 60);
             const accuracy = this.totalShots[this.currentPlayer]
