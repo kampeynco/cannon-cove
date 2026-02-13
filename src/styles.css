@@ -29,31 +29,33 @@ body {
   cursor: crosshair;
 }
 
-/* ─── Loading state ───────────────────────────── */
-body::before {
-  content: '⚓ Loading Cannon Cove...';
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #F4A623;
-  font-family: 'Pirata One', Georgia, serif;
-  font-size: 28px;
-  z-index: 10;
-  pointer-events: none;
-  animation: fadeOut 0.5s 1s forwards;
-}
-
-@keyframes fadeOut {
-  to {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
 
 /* ─── Scrollbar hide ──────────────────────────── */
 ::-webkit-scrollbar {
   display: none;
+}
+
+/* ─── Loading screen ─── */
+#loadingScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #0B1D3A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s ease;
+}
+
+#loadingScreen.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-content {
+  text-align: center;
+  color: #F5F0E8;
+  font-family: 'Inter', sans-serif;
 }
 
 /* ─── Rotate device overlay (mobile portrait) ─── */

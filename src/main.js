@@ -69,11 +69,19 @@ window.addEventListener('orientationchange', () => {
 });
 
 // Wait for fonts to load before starting the game
-// This prevents the menu from rendering with fallback fonts
+// Loading screen covers the canvas until ready
 document.fonts.ready.then(() => {
     const game = new Game(canvas);
     window.game = game;
     game.start();
-    // Re-draw with correct fonts
     resize();
+
+    // Fade out loading screen
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+        loadingScreen.classList.add('fade-out');
+        loadingScreen.addEventListener('transitionend', () => {
+            loadingScreen.remove();
+        });
+    }
 });
