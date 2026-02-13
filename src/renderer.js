@@ -658,7 +658,8 @@ export class Renderer {
         const turnName = currentPlayer === 0 ? player1.name : player2.name;
         ctx.fillStyle = COLORS.sunsetGold;
         ctx.font = 'bold 16px Inter, sans-serif';
-        ctx.fillText(`${turnName}'s Turn`, canvas.width / 2, 70);
+        const turnLabel = turnName === 'You' ? 'Your Turn' : `${turnName}'s Turn`;
+        ctx.fillText(turnLabel, canvas.width / 2, 70);
     }
 
     drawPlayerHUD(x, y, player, alignLeft) {
