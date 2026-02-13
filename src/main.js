@@ -68,6 +68,12 @@ window.addEventListener('orientationchange', () => {
     }, 300);
 });
 
-const game = new Game(canvas);
-window.game = game;
-game.start();
+// Wait for fonts to load before starting the game
+// This prevents the menu from rendering with fallback fonts
+document.fonts.ready.then(() => {
+    const game = new Game(canvas);
+    window.game = game;
+    game.start();
+    // Re-draw with correct fonts
+    resize();
+});
