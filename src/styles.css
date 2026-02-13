@@ -1,0 +1,56 @@
+/* ─── Reset & Base ────────────────────────────── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0B1D3A;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ─── Canvas ──────────────────────────────────── */
+#gameCanvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: crosshair;
+}
+
+/* ─── Loading state ───────────────────────────── */
+body::before {
+  content: '⚓ Loading Cannon Cove...';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #F4A623;
+  font-family: 'Pirata One', Georgia, serif;
+  font-size: 28px;
+  z-index: 10;
+  pointer-events: none;
+  animation: fadeOut 0.5s 1s forwards;
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* ─── Scrollbar hide ──────────────────────────── */
+::-webkit-scrollbar {
+  display: none;
+}

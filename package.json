@@ -1,0 +1,18 @@
+{
+  "name": "cannon-cove",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pirate-themed artillery game inspired by QBasic Gorillas",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "howler": "^2.2.4"
+  }
+}
