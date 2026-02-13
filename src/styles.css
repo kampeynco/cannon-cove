@@ -54,3 +54,55 @@ body::before {
 ::-webkit-scrollbar {
   display: none;
 }
+
+/* ─── Rotate device overlay (mobile portrait) ─── */
+#rotateOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0B1D3A;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.rotate-content {
+  text-align: center;
+  color: #F5F0E8;
+  font-family: 'Inter', sans-serif;
+}
+
+.rotate-icon {
+  font-size: 64px;
+  animation: rotatePhone 2s ease-in-out infinite;
+  margin-bottom: 24px;
+}
+
+.rotate-content h2 {
+  font-family: 'Pirata One', Georgia, serif;
+  font-size: 32px;
+  color: #F4A623;
+  margin-bottom: 12px;
+}
+
+.rotate-content p {
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+@keyframes rotatePhone {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-90deg); }
+  50%, 75% { transform: rotate(-90deg); }
+}
+
+/* Show overlay on mobile portrait only */
+@media (max-width: 768px) and (orientation: portrait) {
+  #rotateOverlay {
+    display: flex;
+  }
+  #gameCanvas {
+    display: none;
+  }
+}
