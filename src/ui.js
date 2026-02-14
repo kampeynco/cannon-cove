@@ -22,14 +22,29 @@ export class UIManager {
         const cx = canvas.width / 2;
         const h = canvas.height;
         const compact = h < 450;
+        const tiny = h < 340; // Very short landscape mobile
 
         // Dim overlay
         ctx.fillStyle = 'rgba(5, 13, 26, 0.85)';
         ctx.fillRect(0, 0, canvas.width, h);
 
+        // Adaptive sizing
+        const titleSize = tiny ? 28 : compact ? 40 : 64;
+        const btnWidth = tiny ? 200 : compact ? 220 : 280;
+        const btnHeight = tiny ? 36 : compact ? 48 : 66;
+        const btnGap = tiny ? 5 : compact ? 8 : 12;
+        const htpH = tiny ? 24 : compact ? 30 : 36;
+        const htpGap = tiny ? 4 : compact ? 8 : 16;
+        const taglineH = tiny ? 16 : compact ? 20 : 40;
+        const taglineGap = tiny ? 6 : compact ? 10 : 16;
+
+        // Calculate total content height to center vertically
+        const totalButtons = this.menuButtons.length * btnHeight + (this.menuButtons.length - 1) * btnGap;
+        const totalContent = titleSize + taglineH + taglineGap + totalButtons + htpGap + htpH;
+        const topMargin = Math.max(10, (h - totalContent) / 2);
+
         // Title
-        const titleSize = compact ? 40 : 64;
-        const titleY = compact ? h * 0.15 : h / 2 - 140;
+        const titleY = topMargin + titleSize / 2;
         ctx.font = `bold ${titleSize}px "Pirata One", Georgia, serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -39,30 +54,21 @@ export class UIManager {
         ctx.fillStyle = COLORS.sunsetGold;
         ctx.fillText('CANNON COVE', cx, titleY);
 
-        if (!compact) {
-            // Anchor decoration
-            ctx.font = '36px serif';
-            ctx.fillText('⚓', cx, h / 2 - 80);
+        // Tagline
+        const tagY = titleY + titleSize / 2 + taglineH / 2 + (tiny ? 2 : 4);
+        ctx.fillStyle = COLORS.sailCream;
+        ctx.font = `italic ${tiny ? 11 : compact ? 14 : 18}px Inter, sans-serif`;
+        ctx.fillText('Aim. Fire. Plunder!', cx, tagY);
 
-            // Tagline
-            ctx.fillStyle = COLORS.sailCream;
-            ctx.font = 'italic 18px Inter, sans-serif';
-            ctx.fillText('Aim. Fire. Plunder!', cx, h / 2 - 50);
-        } else {
-            // Compact tagline
-            ctx.fillStyle = COLORS.sailCream;
-            ctx.font = 'italic 14px Inter, sans-serif';
-            ctx.fillText('Aim. Fire. Plunder!', cx, titleY + titleSize * 0.6);
+        // Anchor (only on tall screens)
+        if (!compact) {
+            ctx.font = '36px serif';
+            ctx.fillStyle = COLORS.sunsetGold;
+            ctx.fillText('⚓', cx, titleY + titleSize / 2 + 14);
         }
 
-        // Buttons — scale to fit
-        const btnWidth = compact ? 220 : 280;
-        const btnHeight = compact ? 48 : 66;
-        const btnGap = compact ? 8 : 12;
-        const totalBtnHeight = this.menuButtons.length * btnHeight + (this.menuButtons.length - 1) * btnGap;
-        const startY = compact
-            ? h * 0.38
-            : h / 2 - 15;
+        // Buttons
+        const startY = tagY + taglineH / 2 + taglineGap;
 
         this.menuButtons.forEach((btn, i) => {
             const by = startY + i * (btnHeight + btnGap);
@@ -81,23 +87,22 @@ export class UIManager {
 
             // Button label
             ctx.fillStyle = isPrimary ? COLORS.deepOcean : COLORS.sailCream;
-            ctx.font = `bold ${isPrimary ? (compact ? 16 : 20) : (compact ? 14 : 17)}px Inter, sans-serif`;
+            ctx.font = `bold ${isPrimary ? (tiny ? 13 : compact ? 16 : 20) : (tiny ? 12 : compact ? 14 : 17)}px Inter, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const labelY = compact ? by + btnHeight * 0.38 : by + btnHeight * 0.38;
+            const labelY = tiny ? by + btnHeight * 0.35 : by + btnHeight * 0.38;
             ctx.fillText(btn.label, cx, labelY);
 
             // Subtitle
             ctx.fillStyle = isPrimary ? 'rgba(11, 29, 58, 0.6)' : 'rgba(245, 240, 232, 0.55)';
-            ctx.font = `${compact ? 10 : 12}px Inter, sans-serif`;
-            const subY = compact ? by + btnHeight * 0.75 : by + btnHeight * 0.72;
+            ctx.font = `${tiny ? 9 : compact ? 10 : 12}px Inter, sans-serif`;
+            const subY = tiny ? by + btnHeight * 0.72 : compact ? by + btnHeight * 0.75 : by + btnHeight * 0.72;
             ctx.fillText(btn.subtitle, cx, subY);
         });
 
         // How to Play button
-        const htpW = compact ? 140 : 160;
-        const htpH = compact ? 30 : 36;
-        const htpY = startY + this.menuButtons.length * (btnHeight + btnGap) + (compact ? 8 : 16);
+        const htpW = tiny ? 120 : compact ? 140 : 160;
+        const htpY = startY + this.menuButtons.length * (btnHeight + btnGap) + htpGap;
         this.howToPlayBounds = { x: cx - htpW / 2, y: htpY, w: htpW, h: htpH };
 
         ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
@@ -109,12 +114,12 @@ export class UIManager {
         ctx.stroke();
 
         ctx.fillStyle = 'rgba(245, 240, 232, 0.7)';
-        ctx.font = `${compact ? 12 : 14}px Inter, sans-serif`;
+        ctx.font = `${tiny ? 10 : compact ? 12 : 14}px Inter, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('📖  How to Play', cx, htpY + htpH / 2);
 
-        // Footer
+        // Footer (only on tall screens)
         if (!compact) {
             ctx.fillStyle = 'rgba(245, 240, 232, 0.35)';
             ctx.font = '12px Inter, sans-serif';
