@@ -6,6 +6,12 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         assetsDir: 'assets',
+        rollupOptions: {
+            input: {
+                main: 'index.html',
+                cookiePolicy: 'cookie-policy.html',
+            },
+        },
     },
     server: {
         port: 5173,
