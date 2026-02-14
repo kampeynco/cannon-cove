@@ -361,7 +361,7 @@ export class Game {
             if (creatureHit) {
                 this.projectile.active = false;
                 this.audio.playBlocked();
-                this.vfx.push({ type: 'splash', x: creatureHit.x, y: creatureHit.y, progress: 0 });
+                this.vfx.push({ type: 'explosion', x: creatureHit.x, y: creatureHit.y, progress: 0 });
                 this.switchTurn();
                 return;
             }
