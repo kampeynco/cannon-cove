@@ -60,12 +60,6 @@ export class UIManager {
         ctx.font = `italic ${tiny ? 11 : compact ? 14 : 18}px Inter, sans-serif`;
         ctx.fillText('Aim. Fire. Plunder!', cx, tagY);
 
-        // Anchor (only on tall screens)
-        if (!compact) {
-            ctx.font = '36px serif';
-            ctx.fillStyle = COLORS.sunsetGold;
-            ctx.fillText('⚓', cx, titleY + titleSize / 2 + 14);
-        }
 
         // Buttons
         const startY = tagY + taglineH / 2 + taglineGap;
