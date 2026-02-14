@@ -59,13 +59,18 @@
       <div class="rotate-icon">📱</div>
       <h2>Rotate Your Device</h2>
       <p>Cannon Cove plays best in landscape mode</p>
+      <a href="#dismiss-rotate" class="rotate-dismiss"
+        onclick="document.getElementById('rotateOverlay').style.display='none'">Continue anyway →</a>
     </div>
   </div>
   <div id="loadingScreen">
     <div class="loading-content">
       <div style="font-size:48px;margin-bottom:16px;">⚓</div>
       <h1 style="font-family:'Pirata One',Georgia,serif;font-size:36px;color:#F4A623;margin:0 0 12px;">Cannon Cove</h1>
-      <p style="font-size:14px;color:rgba(245,240,232,0.6);margin:0;">Preparing the fleet…</p>
+      <p class="loading-text-mobile" style="font-size:14px;color:rgba(245,240,232,0.6);margin:0;">Preparing the fleet…
+      </p>
+      <p class="loading-text-desktop" style="font-size:14px;color:rgba(245,240,232,0.6);margin:0;">Loading Cannon Cove…
+      </p>
     </div>
   </div>
   <canvas id="gameCanvas"></canvas>

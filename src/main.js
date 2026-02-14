@@ -50,13 +50,6 @@ function checkOrientation() {
 resize();
 checkOrientation();
 
-// On desktop/tablet, immediately hide the loading screen
-// (only show the splash for mobile devices)
-if (!isMobileDevice() || window.innerWidth >= 768) {
-    const ls = document.getElementById('loadingScreen');
-    if (ls) ls.style.display = 'none';
-}
-
 window.addEventListener('resize', () => {
     resize();
     checkOrientation();

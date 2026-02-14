@@ -116,11 +116,43 @@ body.portrait-mode #rotateOverlay {
   display: flex;
 }
 
-/* Safety: never show mobile overlays on desktop/laptop (fine pointer = mouse/trackpad) */
-@media (pointer: fine) {
+/* "Continue anyway" dismiss link on rotate overlay */
+.rotate-dismiss {
+  display: inline-block;
+  margin-top: 20px;
+  color: rgba(245, 240, 232, 0.5);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
 
-  #rotateOverlay,
-  #loadingScreen {
+.rotate-dismiss:hover {
+  color: #F4A623;
+}
+
+/* Loading text: show mobile text by default, hide desktop text */
+.loading-text-desktop {
+  display: none;
+}
+
+.loading-text-mobile {
+  display: block;
+}
+
+/* On wide screens, swap loading text for desktop-friendly copy */
+@media (min-width: 768px) {
+  .loading-text-desktop {
+    display: block;
+  }
+
+  .loading-text-mobile {
+    display: none;
+  }
+}
+
+/* Safety: never show rotate overlay on desktop/laptop (fine pointer = mouse/trackpad) */
+@media (pointer: fine) {
+  #rotateOverlay {
     display: none !important;
   }
 }

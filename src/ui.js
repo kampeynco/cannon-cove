@@ -828,7 +828,7 @@ export class UIManager {
         ctx.fillText('RANK', modalX + 20, headerY);
         ctx.fillText('PLAYER', modalX + 70, headerY);
         ctx.textAlign = 'center';
-        ctx.fillText('W', modalX + modalW - 140, headerY);
+        ctx.fillText('Wins', modalX + modalW - 140, headerY);
         ctx.fillText('WIN%', modalX + modalW - 85, headerY);
         ctx.fillText('ACC%', modalX + modalW - 30, headerY);
 
