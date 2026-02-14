@@ -73,7 +73,7 @@ export async function getPlayerProfile() {
         .from('players')
         .select('username, avatar_url')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
     return data;
 }
 
@@ -121,7 +121,7 @@ export async function ensurePlayer() {
         .from('players')
         .select('id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
     if (existing) return existing;
 
@@ -220,7 +220,7 @@ export async function loadSettings() {
         .from('players')
         .select('settings')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
     if (error || !data) return null;
     return data.settings;
@@ -298,7 +298,7 @@ export async function getProfile() {
         .from('players')
         .select('username, avatar_url')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
     if (error || !data) return null;
     return data;

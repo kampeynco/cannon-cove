@@ -720,6 +720,7 @@ export class UIManager {
         const w = canvas.width;
         const h = canvas.height;
         const compact = h < 600;
+        const safeEntries = entries || [];
 
         // Dark overlay
         ctx.fillStyle = 'rgba(5, 13, 26, 0.92)';
@@ -769,12 +770,12 @@ export class UIManager {
         // Entries
         const rowH = compact ? 28 : 32;
         const startRowY = headerY + 24;
-        const maxRows = Math.min(entries.length, Math.floor((modalY + modalH - startRowY - 50) / rowH));
+        const maxRows = Math.min(safeEntries.length, Math.floor((modalY + modalH - startRowY - 50) / rowH));
 
         const medals = ['🥇', '🥈', '🥉'];
 
         for (let i = 0; i < maxRows; i++) {
-            const e = entries[i];
+            const e = safeEntries[i];
             const rowY = startRowY + i * rowH;
 
             // Alternate row bg
@@ -799,7 +800,12 @@ export class UIManager {
             ctx.fillText(`${Math.round(e.accuracy_pct)}%`, modalX + modalW - 30, rowY);
         }
 
-        if (entries.length === 0) {
+        if (entries === null) {
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.5)';
+            ctx.font = '14px Inter, sans-serif';
+            ctx.fillText('Loading...', cx, startRowY + 50);
+        } else if (safeEntries.length === 0) {
             ctx.textAlign = 'center';
             ctx.fillStyle = 'rgba(245, 240, 232, 0.4)';
             ctx.font = '14px Inter, sans-serif';

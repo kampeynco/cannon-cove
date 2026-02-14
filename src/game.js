@@ -89,9 +89,9 @@ export class Game {
                     this.state = STATES.HOWTOPLAY;
                 } else if (this.ui.isLeaderboardClick && this.ui.isLeaderboardClick(cx, cy)) {
                     this.audio.playClick();
-                    this.leaderboardData = [];
+                    this.leaderboardData = null;
                     this.state = STATES.LEADERBOARD;
-                    getLeaderboard().then(data => { this.leaderboardData = data; });
+                    getLeaderboard().then(data => { this.leaderboardData = data || []; });
                 }
                 // Sign-in link on main menu (only for guests)
                 if (this.ui.isMenuSignInClick && this.ui.isMenuSignInClick(cx, cy)) {
@@ -134,7 +134,17 @@ export class Game {
                 const action = this.ui.getSignInClick(cx, cy);
                 if (action === 'google') {
                     this.audio.playClick();
-                    signInWithGoogle();
+                    signInWithGoogle().then(({ data, error }) => {
+                        if (error) {
+                            console.error('[Auth] Google sign-in error:', error);
+                            alert('Google sign-in failed: ' + error.message);
+                        } else {
+                            console.log('[Auth] Google sign-in redirect initiated', data);
+                        }
+                    }).catch(err => {
+                        console.error('[Auth] Google sign-in exception:', err);
+                        alert('Google sign-in failed. Check the console for details.');
+                    });
                 } else if (action === 'email') {
                     this.audio.playClick();
                     const email = prompt('Enter your email for a magic link:');
