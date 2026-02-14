@@ -124,7 +124,7 @@ export class UIManager {
                 const nameText = `⚓ ${name}`;
                 const nameW = ctx.measureText(nameText).width + 16;
                 this._menuUsernameBounds = { x: cursorX - nameW, y: navY - 12, w: nameW, h: 24 };
-                ctx.fillStyle = 'rgba(245, 240, 232, 0.65)';
+                ctx.fillStyle = 'rgba(245, 240, 232, 0.8)';
                 ctx.fillText(nameText, cursorX, navY);
                 cursorX -= nameW + navPadding;
 
@@ -149,7 +149,7 @@ export class UIManager {
             const lbText = 'Leaderboard';
             const lbW = ctx.measureText(lbText).width + 16;
             this._leaderboardBounds = { x: cursorX - lbW, y: navY - 12, w: lbW, h: 24 };
-            ctx.fillStyle = 'rgba(245, 240, 232, 0.65)';
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.8)';
             ctx.fillText(lbText, cursorX, navY);
             cursorX -= lbW + navPadding;
 
@@ -161,7 +161,7 @@ export class UIManager {
             const htpText = 'How to Play';
             const htpW = ctx.measureText(htpText).width + 16;
             this.howToPlayBounds = { x: cursorX - htpW, y: navY - 12, w: htpW, h: 24 };
-            ctx.fillStyle = 'rgba(245, 240, 232, 0.65)';
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.8)';
             ctx.fillText(htpText, cursorX, navY);
         } else {
             // Mobile: centered buttons below game modes
