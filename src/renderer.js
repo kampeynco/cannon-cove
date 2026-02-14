@@ -111,7 +111,7 @@ export class Renderer {
             { x: canvas.width * 0.9, w: 180, h: 75, palms: [{ ox: -5, h: 72, lean: -0.3 }] },
         ];
 
-        islands.forEach(({ x, w, h, palms }) => {
+        islands.forEach(({ x, w, h, palms }, idx) => {
             const baseY = waterLevel + 5;
 
             // ── Sandy beach base (drawn first, largest shape) ──
@@ -252,6 +252,143 @@ export class Renderer {
                     ctx.fill();
                 }
             });
+
+            // ── Treasure Chest (middle island only) ──
+            if (idx === 1) {
+                const chestX = x + 2;
+                const chestBaseY = baseY - h * 0.32;
+                const cw = 22;   // chest width (half)
+                const ch = 16;   // chest body height
+                const lidH = 10; // lid height
+
+                // Shadow under chest
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                ctx.beginPath();
+                ctx.ellipse(chestX, chestBaseY + 2, cw + 4, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Chest body (dark wood)
+                ctx.fillStyle = '#6B3A1F';
+                ctx.fillRect(chestX - cw, chestBaseY - ch, cw * 2, ch);
+                // Wood highlight
+                ctx.fillStyle = '#8B4E2A';
+                ctx.fillRect(chestX - cw + 2, chestBaseY - ch + 2, cw * 2 - 4, ch * 0.4);
+                // Wood dark bottom
+                ctx.fillStyle = '#4A2510';
+                ctx.fillRect(chestX - cw, chestBaseY - 4, cw * 2, 4);
+
+                // Metal bands
+                ctx.fillStyle = '#C4A032';
+                ctx.fillRect(chestX - cw - 1, chestBaseY - ch, cw * 2 + 2, 3);
+                ctx.fillRect(chestX - cw - 1, chestBaseY - ch * 0.45, cw * 2 + 2, 2);
+                // Metal band rivets
+                ctx.fillStyle = '#FFD84A';
+                for (const rx of [-cw + 3, 0, cw - 3]) {
+                    ctx.beginPath();
+                    ctx.arc(chestX + rx, chestBaseY - ch + 1.5, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Open lid (trapezoid, tilted back)
+                ctx.fillStyle = '#7B4425';
+                ctx.beginPath();
+                ctx.moveTo(chestX - cw, chestBaseY - ch);
+                ctx.lineTo(chestX - cw + 3, chestBaseY - ch - lidH);
+                ctx.lineTo(chestX + cw - 3, chestBaseY - ch - lidH);
+                ctx.lineTo(chestX + cw, chestBaseY - ch);
+                ctx.closePath();
+                ctx.fill();
+                // Lid highlight
+                ctx.fillStyle = '#9B6035';
+                ctx.beginPath();
+                ctx.moveTo(chestX - cw + 2, chestBaseY - ch);
+                ctx.lineTo(chestX - cw + 5, chestBaseY - ch - lidH + 2);
+                ctx.lineTo(chestX + cw - 5, chestBaseY - ch - lidH + 2);
+                ctx.lineTo(chestX + cw - 2, chestBaseY - ch);
+                ctx.closePath();
+                ctx.fill();
+                // Lid metal band
+                ctx.fillStyle = '#C4A032';
+                ctx.fillRect(chestX - cw + 3, chestBaseY - ch - lidH, cw * 2 - 6, 2);
+
+                // Gold coins spilling out
+                ctx.fillStyle = '#FFD700';
+                const coins = [
+                    { cx: -8, cy: -ch - 2, r: 4 },
+                    { cx: 3, cy: -ch - 4, r: 3.5 },
+                    { cx: -3, cy: -ch - 1, r: 3 },
+                    { cx: 10, cy: -ch, r: 3.5 },
+                    { cx: -12, cy: -ch + 1, r: 3 },
+                    { cx: 6, cy: -ch - 6, r: 2.5 },
+                    { cx: -5, cy: -ch - 5, r: 2.5 },
+                    // Coins spilling out the front
+                    { cx: -cw - 3, cy: -3, r: 3 },
+                    { cx: -cw + 1, cy: -1, r: 2.5 },
+                    { cx: cw + 2, cy: -2, r: 2.5 },
+                ];
+                coins.forEach(coin => {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(chestX + coin.cx, chestBaseY + coin.cy, coin.r, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Coin shine
+                    ctx.fillStyle = '#FFF3A0';
+                    ctx.beginPath();
+                    ctx.arc(chestX + coin.cx - 1, chestBaseY + coin.cy - 1, coin.r * 0.35, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Ruby (red gem)
+                ctx.fillStyle = '#E01030';
+                ctx.beginPath();
+                ctx.moveTo(chestX + 1, chestBaseY - ch - 7);
+                ctx.lineTo(chestX + 5, chestBaseY - ch - 4);
+                ctx.lineTo(chestX + 1, chestBaseY - ch - 1);
+                ctx.lineTo(chestX - 3, chestBaseY - ch - 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#FF6080';
+                ctx.beginPath();
+                ctx.moveTo(chestX + 1, chestBaseY - ch - 6);
+                ctx.lineTo(chestX + 3, chestBaseY - ch - 4);
+                ctx.lineTo(chestX + 1, chestBaseY - ch - 3);
+                ctx.closePath();
+                ctx.fill();
+
+                // Emerald (green gem)
+                ctx.fillStyle = '#10B858';
+                ctx.fillRect(chestX - 10, chestBaseY - ch - 5, 5, 5);
+                ctx.fillStyle = '#50E890';
+                ctx.fillRect(chestX - 9, chestBaseY - ch - 4, 2, 2);
+
+                // Diamond (white gem)
+                ctx.fillStyle = '#D0E8FF';
+                ctx.beginPath();
+                ctx.moveTo(chestX + 10, chestBaseY - ch - 6);
+                ctx.lineTo(chestX + 13, chestBaseY - ch - 3);
+                ctx.lineTo(chestX + 10, chestBaseY - ch);
+                ctx.lineTo(chestX + 7, chestBaseY - ch - 3);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#F0F8FF';
+                ctx.beginPath();
+                ctx.moveTo(chestX + 10, chestBaseY - ch - 5);
+                ctx.lineTo(chestX + 12, chestBaseY - ch - 3);
+                ctx.lineTo(chestX + 10, chestBaseY - ch - 1.5);
+                ctx.closePath();
+                ctx.fill();
+
+                // Gold shimmer sparkle
+                const sparkle = Math.sin(time * 3) * 0.4 + 0.6;
+                ctx.fillStyle = `rgba(255, 255, 200, ${sparkle * 0.8})`;
+                ctx.beginPath();
+                ctx.arc(chestX - 6, chestBaseY - ch - 3, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = `rgba(255, 255, 200, ${(1 - sparkle) * 0.7})`;
+                ctx.beginPath();
+                ctx.arc(chestX + 8, chestBaseY - ch - 1, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
         });
     }
 
