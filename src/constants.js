@@ -36,6 +36,8 @@ export const STATES = {
     HOWTOPLAY: 'HOWTOPLAY',
     SIGNIN: 'SIGNIN',
     LEADERBOARD: 'LEADERBOARD',
+    PROFILE_SETUP: 'PROFILE_SETUP',
+    MAGIC_LINK_SENT: 'MAGIC_LINK_SENT',
 };
 
 // ─── Game Modes ────────────────────────────────────

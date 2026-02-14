@@ -57,10 +57,31 @@ export async function refreshAuthCache() {
 /** Get cached user's display name */
 export function getCachedUsername() {
     if (!_cachedUser) return null;
-    return _cachedUser.user_metadata?.full_name
+    return _cachedUser.user_metadata?.captain_name
+        || _cachedUser.user_metadata?.full_name
         || _cachedUser.user_metadata?.name
         || _cachedUser.email?.split('@')[0]
         || null;
+}
+
+/** Fetch current player's profile from the players table */
+export async function getPlayerProfile() {
+    if (!supabase) return null;
+    const user = await getUser();
+    if (!user) return null;
+    const { data } = await supabase
+        .from('players')
+        .select('username, avatar_url')
+        .eq('id', user.id)
+        .single();
+    return data;
+}
+
+/** Sign out current user */
+export async function signOut() {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    _cachedUser = null;
 }
 
 /** Get current user */
@@ -104,11 +125,16 @@ export async function ensurePlayer() {
 
     if (existing) return existing;
 
+    const username = user.user_metadata?.captain_name
+        || user.user_metadata?.full_name
+        || user.user_metadata?.name
+        || (user.email ? user.email.split('@')[0] : null);
+
     const { data, error } = await supabase
         .from('players')
         .insert({
             id: user.id,
-            username: user.user_metadata?.full_name || user.user_metadata?.name || null,
+            username,
             avatar_url: user.user_metadata?.avatar_url || null,
         })
         .select()
@@ -198,6 +224,98 @@ export async function loadSettings() {
 
     if (error || !data) return null;
     return data.settings;
+}
+
+/** Update player profile (captain name + avatar) */
+export async function updateProfile({ username, avatarFile }) {
+    if (!supabase) return null;
+    const user = await getUser();
+    if (!user) return null;
+
+    // Ensure the player row exists first
+    await ensurePlayer();
+
+    const updates = {};
+
+    // Upload avatar if provided
+    if (avatarFile) {
+        const ext = avatarFile.name.split('.').pop();
+        const path = `${user.id}/avatar.${ext}`;
+
+        // Remove old avatar (ignore errors)
+        await supabase.storage.from('avatars').remove([path]);
+
+        const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(path, avatarFile, {
+                upsert: true,
+                contentType: avatarFile.type,
+            });
+
+        if (uploadError) {
+            console.error('Avatar upload failed:', uploadError.message);
+        } else {
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(path);
+            updates.avatar_url = publicUrl;
+            console.log('Avatar uploaded:', publicUrl);
+        }
+    }
+
+    if (username) {
+        updates.username = username;
+        // Also update auth metadata for getCachedUsername
+        await supabase.auth.updateUser({
+            data: { captain_name: username }
+        });
+    }
+
+    if (Object.keys(updates).length === 0) return null;
+
+    const { data, error } = await supabase
+        .from('players')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Profile update failed:', error.message);
+        return null;
+    }
+    console.log('Profile saved:', data);
+    return data;
+}
+
+/** Get current player's profile */
+export async function getProfile() {
+    if (!supabase) return null;
+    const user = await getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+        .from('players')
+        .select('username, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+    if (error || !data) return null;
+    return data;
+}
+
+/** Check if user needs profile setup (new email signup, no captain name) */
+export async function needsProfileSetup() {
+    if (!supabase) return false;
+    const user = await getUser();
+    if (!user || user.is_anonymous) return false;
+
+    // If they already have a captain_name in metadata, skip
+    if (user.user_metadata?.captain_name) return false;
+    // If they signed in via OAuth and have a name, skip
+    if (user.user_metadata?.full_name) return false;
+
+    return true;
 }
 
 /** Listen for auth state changes */

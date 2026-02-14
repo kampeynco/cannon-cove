@@ -87,6 +87,7 @@ document.fonts.ready.then(async () => {
     }
 
     game.start();
+    game.setupAuthListener();
     resize();
 
     // Fade out loading screen

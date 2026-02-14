@@ -89,7 +89,7 @@ export class UIManager {
             ctx.fillText(btn.label, cx, labelY);
 
             // Subtitle
-            ctx.fillStyle = isPrimary ? 'rgba(11, 29, 58, 0.6)' : 'rgba(245, 240, 232, 0.55)';
+            ctx.fillStyle = isPrimary ? 'rgba(11, 29, 58, 0.6)' : 'rgba(245, 240, 232, 0.7)';
             ctx.font = `${tiny ? 9 : compact ? 10 : 12}px Inter, sans-serif`;
             const subY = tiny ? by + btnHeight * 0.72 : compact ? by + btnHeight * 0.75 : by + btnHeight * 0.72;
             ctx.fillText(btn.subtitle, cx, subY);
@@ -140,17 +140,29 @@ export class UIManager {
             const name = getCachedUsername() || 'Captain';
             ctx.fillStyle = 'rgba(245, 240, 232, 0.6)';
             ctx.fillText(`⚓  ${name}`, cx, signInY);
+            const nameW = Math.max(ctx.measureText(`⚓  ${name}`).width + 16, 100);
+            this._menuUsernameBounds = { x: cx - nameW / 2, y: signInY - 10, w: nameW, h: 20 };
             this._menuSignInBounds = null;
+
+            // Sign out link
+            const signOutY = signInY + (tiny ? 16 : 20);
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.55)';
+            ctx.font = `${tiny ? 9 : 11}px Inter, sans-serif`;
+            ctx.fillText('Sign Out', cx, signOutY);
+            const soW = tiny ? 60 : 70;
+            this._menuSignOutBounds = { x: cx - soW / 2, y: signOutY - 10, w: soW, h: 20 };
         } else {
             ctx.fillStyle = COLORS.sunsetGold;
             ctx.fillText('⚓  Sign In / Sign Up', cx, signInY);
             const signInW = tiny ? 120 : 150;
             this._menuSignInBounds = { x: cx - signInW / 2, y: signInY - 10, w: signInW, h: 20 };
+            this._menuSignOutBounds = null;
+            this._menuUsernameBounds = null;
         }
 
         // Footer (only on tall screens)
         if (!compact) {
-            ctx.fillStyle = 'rgba(245, 240, 232, 0.35)';
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.55)';
             ctx.font = '12px Inter, sans-serif';
             ctx.fillText('Drag to aim • Release to fire', cx, h - 20);
         }
@@ -737,14 +749,14 @@ export class UIManager {
         // Column headers
         const headerY = modalY + (compact ? 56 : 72);
         ctx.font = `bold ${compact ? 11 : 12}px Inter, sans-serif`;
-        ctx.fillStyle = 'rgba(245, 240, 232, 0.5)';
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.65)';
         ctx.textAlign = 'left';
         ctx.fillText('RANK', modalX + 20, headerY);
-        ctx.fillText('PLAYER', modalX + 60, headerY);
-        ctx.textAlign = 'right';
-        ctx.fillText('WINS', modalX + modalW - 110, headerY);
-        ctx.fillText('WIN%', modalX + modalW - 50, headerY);
-        ctx.fillText('ACC%', modalX + modalW - 20, headerY);
+        ctx.fillText('PLAYER', modalX + 70, headerY);
+        ctx.textAlign = 'center';
+        ctx.fillText('W', modalX + modalW - 140, headerY);
+        ctx.fillText('WIN%', modalX + modalW - 85, headerY);
+        ctx.fillText('ACC%', modalX + modalW - 30, headerY);
 
         // Divider
         ctx.strokeStyle = 'rgba(245, 240, 232, 0.15)';
@@ -778,13 +790,13 @@ export class UIManager {
 
             const name = e.username || 'Anonymous';
             ctx.fillStyle = COLORS.sailCream;
-            ctx.fillText(name.length > 16 ? name.slice(0, 15) + '…' : name, modalX + 60, rowY);
+            ctx.fillText(name.length > 16 ? name.slice(0, 15) + '…' : name, modalX + 70, rowY);
 
-            ctx.textAlign = 'right';
+            ctx.textAlign = 'center';
             ctx.fillStyle = 'rgba(245, 240, 232, 0.8)';
-            ctx.fillText(e.total_wins, modalX + modalW - 110, rowY);
-            ctx.fillText(`${e.win_rate}%`, modalX + modalW - 50, rowY);
-            ctx.fillText(`${Math.round(e.accuracy_pct)}%`, modalX + modalW - 20, rowY);
+            ctx.fillText(e.total_wins, modalX + modalW - 140, rowY);
+            ctx.fillText(`${e.win_rate}%`, modalX + modalW - 85, rowY);
+            ctx.fillText(`${Math.round(e.accuracy_pct)}%`, modalX + modalW - 30, rowY);
         }
 
         if (entries.length === 0) {
@@ -807,6 +819,257 @@ export class UIManager {
     getLeaderboardClick(x, y) {
         if (!this._leaderboardBackBounds) return null;
         const b = this._leaderboardBackBounds;
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return 'back';
+        return null;
+    }
+
+    isMenuSignOutClick(x, y) {
+        if (!this._menuSignOutBounds) return false;
+        const b = this._menuSignOutBounds;
+        return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+    }
+
+    isMenuUsernameClick(x, y) {
+        if (!this._menuUsernameBounds) return false;
+        const b = this._menuUsernameBounds;
+        return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+    }
+
+    drawProfileSetup(captainName = '', avatarPreviewUrl = null) {
+        const { ctx, canvas } = this;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // Dark overlay
+        ctx.fillStyle = 'rgba(5, 13, 26, 0.92)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Modal
+        const mw = Math.min(400, canvas.width - 40);
+        const mh = 380;
+        const mx = cx - mw / 2;
+        const my = cy - mh / 2;
+
+        this.drawRoundedRect(mx, my, mw, mh, 16);
+        ctx.fillStyle = '#1A2A3A';
+        ctx.fill();
+        ctx.strokeStyle = COLORS.sunsetGold;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Inner glow
+        this.drawRoundedRect(mx + 3, my + 3, mw - 6, mh - 6, 13);
+        ctx.strokeStyle = 'rgba(244, 166, 35, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Header
+        ctx.font = '36px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🏴‍☠️', cx, my + 40);
+
+        ctx.font = 'bold 22px "Pirata One", Georgia, serif';
+        ctx.fillStyle = COLORS.sunsetGold;
+        ctx.fillText('Name Yer Ship, Captain!', cx, my + 72);
+
+        ctx.font = '13px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.7)';
+        ctx.fillText('Choose a captain name for the leaderboard', cx, my + 94);
+
+        // Avatar area (clickable for upload)
+        const avatarY = my + 112;
+        const avatarSize = 56;
+        const avatarCenterY = avatarY + avatarSize / 2;
+        const avatarX = cx - avatarSize / 2;
+
+        if (avatarPreviewUrl) {
+            // Create/update cached Image when URL changes
+            if (!this._avatarImg || this._avatarImg._src !== avatarPreviewUrl) {
+                this._avatarImg = new Image();
+                this._avatarImg._src = avatarPreviewUrl;
+                this._avatarImg._loaded = false;
+                this._avatarImg.onload = () => { this._avatarImg._loaded = true; };
+                this._avatarImg.src = avatarPreviewUrl;
+            }
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, avatarCenterY, avatarSize / 2, 0, Math.PI * 2);
+            ctx.clip();
+
+            if (this._avatarImg._loaded) {
+                // Cover-fit: crop from center to fill circle
+                const img = this._avatarImg;
+                const iw = img.naturalWidth;
+                const ih = img.naturalHeight;
+                const scale = Math.max(avatarSize / iw, avatarSize / ih);
+                const sw = avatarSize / scale;
+                const sh = avatarSize / scale;
+                const sx = (iw - sw) / 2;
+                const sy = (ih - sh) / 2;
+                ctx.drawImage(img, sx, sy, sw, sh, avatarX, avatarY, avatarSize, avatarSize);
+            } else {
+                ctx.fillStyle = '#2A4A6A';
+                ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
+            }
+            ctx.restore();
+
+            ctx.beginPath();
+            ctx.arc(cx, avatarCenterY, avatarSize / 2, 0, Math.PI * 2);
+            ctx.strokeStyle = COLORS.sunsetGold;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.arc(cx, avatarCenterY, avatarSize / 2, 0, Math.PI * 2);
+            ctx.fillStyle = '#2A4A6A';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(244, 166, 35, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.font = '24px serif';
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.6)';
+            ctx.fillText('📷', cx, avatarCenterY + 2);
+        }
+
+        // Avatar click bounds
+        this._profileAvatarBounds = { x: avatarX, y: avatarY, w: avatarSize, h: avatarSize };
+
+        // "Tap to upload" hint
+        const uploadY = avatarY + avatarSize + 14;
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(244, 166, 35, 0.6)';
+        ctx.fillText('Tap to upload photo', cx, uploadY);
+        const uploadW = 130;
+        this._profileUploadBounds = { x: cx - uploadW / 2, y: uploadY - 10, w: uploadW, h: 20 };
+
+        // Captain name input area
+        const inputY = uploadY + 24;
+        const inputW = mw - 80;
+        const inputH = 36;
+        const inputX = cx - inputW / 2;
+        this.drawRoundedRect(inputX, inputY, inputW, inputH, 8);
+        ctx.fillStyle = 'rgba(15, 40, 71, 0.8)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(245, 240, 232, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Name text or placeholder
+        ctx.font = '14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        if (captainName) {
+            ctx.fillStyle = COLORS.sailCream;
+            ctx.fillText(captainName, cx, inputY + inputH / 2 + 1);
+        } else {
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.35)';
+            ctx.fillText('Enter captain name...', cx, inputY + inputH / 2 + 1);
+        }
+        this._profileNameBounds = { x: inputX, y: inputY, w: inputW, h: inputH };
+
+        // "Set Sail!" button
+        const btnW = mw - 80;
+        const btnH = 40;
+        const btnY = inputY + inputH + 16;
+        this.drawRoundedRect(cx - btnW / 2, btnY, btnW, btnH, 8);
+        const canConfirm = captainName.length >= 2;
+        ctx.fillStyle = canConfirm ? COLORS.sunsetGold : 'rgba(244, 166, 35, 0.3)';
+        ctx.fill();
+
+        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.fillStyle = canConfirm ? '#0B1D3A' : 'rgba(11, 29, 58, 0.5)';
+        ctx.fillText('⚓  Set Sail!', cx, btnY + btnH / 2 + 1);
+        this._profileConfirmBounds = { x: cx - btnW / 2, y: btnY, w: btnW, h: btnH };
+
+        // "Skip" link (inside card)
+        const skipY = btnY + btnH + 18;
+        ctx.font = '12px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.5)';
+        ctx.fillText('Skip for now', cx, skipY);
+        this._profileSkipBounds = { x: cx - 60, y: skipY - 10, w: 120, h: 20 };
+    }
+
+    getProfileSetupClick(x, y) {
+        if (!this._profileConfirmBounds) return null;
+        const { _profileConfirmBounds: confirm, _profileSkipBounds: skip,
+            _profileNameBounds: name, _profileUploadBounds: upload,
+            _profileAvatarBounds: avatar } = this;
+
+        if (confirm && x >= confirm.x && x <= confirm.x + confirm.w && y >= confirm.y && y <= confirm.y + confirm.h) return 'confirm';
+        if (skip && x >= skip.x && x <= skip.x + skip.w && y >= skip.y && y <= skip.y + skip.h) return 'skip';
+        if (name && x >= name.x && x <= name.x + name.w && y >= name.y && y <= name.y + name.h) return 'name';
+        if (avatar && x >= avatar.x && x <= avatar.x + avatar.w && y >= avatar.y && y <= avatar.y + avatar.h) return 'upload';
+        if (upload && x >= upload.x && x <= upload.x + upload.w && y >= upload.y && y <= upload.y + upload.h) return 'upload';
+        return null;
+    }
+
+    drawMagicLinkSent(email = '') {
+        const { ctx, canvas } = this;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // Dark overlay
+        ctx.fillStyle = 'rgba(5, 13, 26, 0.92)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Modal
+        const mw = Math.min(380, canvas.width - 40);
+        const mh = 260;
+        const mx = cx - mw / 2;
+        const my = cy - mh / 2;
+
+        this.drawRoundedRect(mx, my, mw, mh, 16);
+        ctx.fillStyle = '#1A2A3A';
+        ctx.fill();
+        ctx.strokeStyle = COLORS.sunsetGold;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Inner glow
+        this.drawRoundedRect(mx + 3, my + 3, mw - 6, mh - 6, 13);
+        ctx.strokeStyle = 'rgba(244, 166, 35, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Header emoji
+        ctx.font = '40px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('✉️', cx, my + 48);
+
+        // Title
+        ctx.font = 'bold 22px "Pirata One", Georgia, serif';
+        ctx.fillStyle = COLORS.sunsetGold;
+        ctx.fillText('Check Yer Inbox!', cx, my + 84);
+
+        // Description
+        ctx.font = '14px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.75)';
+        ctx.fillText("We've sent a magic link to:", cx, my + 114);
+
+        // Email
+        ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.fillStyle = COLORS.sailCream;
+        const displayEmail = email.length > 28 ? email.slice(0, 26) + '…' : email;
+        ctx.fillText(displayEmail, cx, my + 138);
+
+        // Hint
+        ctx.font = '12px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.5)';
+        ctx.fillText('Click the link in the email to sign in.', cx, my + 168);
+
+        // Back button
+        const backY = my + mh - 42;
+        ctx.font = '13px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.55)';
+        ctx.fillText('← Back to Menu', cx, backY);
+        this._magicLinkBackBounds = { x: cx - 80, y: backY - 12, w: 160, h: 24 };
+    }
+
+    getMagicLinkSentClick(x, y) {
+        if (!this._magicLinkBackBounds) return null;
+        const b = this._magicLinkBackBounds;
         if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return 'back';
         return null;
     }

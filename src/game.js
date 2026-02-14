@@ -8,7 +8,7 @@ import { InputManager } from './input.js';
 import { PowerUpSystem } from './powerups.js';
 import { SeaCreatures } from './creatures.js';
 import { UIManager } from './ui.js';
-import { saveMatch, isAuthenticatedSync, signInWithGoogle, signInWithEmail, refreshAuthCache, getLeaderboard, saveSettings, loadSettings } from './supabase.js';
+import { saveMatch, isAuthenticatedSync, signInWithGoogle, signInWithEmail, refreshAuthCache, getLeaderboard, saveSettings, loadSettings, signOut, ensureSession, updateProfile, needsProfileSetup, ensurePlayer, onAuthStateChange, getCachedUsername, getPlayerProfile } from './supabase.js';
 
 export class Game {
     constructor(canvas) {
@@ -98,6 +98,29 @@ export class Game {
                     this.audio.playClick();
                     this.state = STATES.SIGNIN;
                 }
+                // Username click → open profile editor (authenticated users)
+                if (this.ui.isMenuUsernameClick && this.ui.isMenuUsernameClick(cx, cy)) {
+                    this.audio.playClick();
+                    this._profileAvatarFile = null;
+                    this._profileAvatarPreview = null;
+                    this._profileCaptainName = getCachedUsername() || '';
+                    this.state = STATES.PROFILE_SETUP;
+
+                    // Load existing avatar from db
+                    getPlayerProfile().then(profile => {
+                        if (profile?.avatar_url) {
+                            this._profileAvatarPreview = profile.avatar_url;
+                        }
+                    });
+                }
+                // Sign-out link (only for authenticated users)
+                if (this.ui.isMenuSignOutClick && this.ui.isMenuSignOutClick(cx, cy)) {
+                    this.audio.playClick();
+                    signOut().then(async () => {
+                        await ensureSession();
+                        await refreshAuthCache();
+                    });
+                }
             } else if (this.state === STATES.VICTORY) {
                 if (this.ui.isPlayAgainClick(cx, cy)) {
                     this.audio.playClick();
@@ -115,10 +138,48 @@ export class Game {
                 } else if (action === 'email') {
                     this.audio.playClick();
                     const email = prompt('Enter your email for a magic link:');
-                    if (email) signInWithEmail(email);
+                    if (email) {
+                        this._magicLinkEmail = email;
+                        signInWithEmail(email).then(() => {
+                            this.state = STATES.MAGIC_LINK_SENT;
+                        });
+                    }
                 } else if (action === 'skip') {
                     this.audio.playClick();
                     this.resetGame();
+                }
+            } else if (this.state === STATES.PROFILE_SETUP) {
+                const action = this.ui.getProfileSetupClick(cx, cy);
+                if (action === 'name') {
+                    this.audio.playClick();
+                    const name = prompt('Enter your captain name:', this._profileCaptainName || '');
+                    if (name && name.trim().length >= 2) {
+                        this._profileCaptainName = name.trim().slice(0, 20);
+                    }
+                } else if (action === 'upload') {
+                    this.audio.playClick();
+                    this._openAvatarPicker();
+                } else if (action === 'confirm' && this._profileCaptainName && this._profileCaptainName.length >= 2) {
+                    this.audio.playClick();
+                    updateProfile({
+                        username: this._profileCaptainName,
+                        avatarFile: this._profileAvatarFile || null,
+                    }).then(async () => {
+                        await ensurePlayer();
+                        await refreshAuthCache();
+                        this._profileCaptainName = '';
+                        this._profileAvatarFile = null;
+                        this._profileAvatarPreview = null;
+                        this.state = STATES.MENU;
+                    });
+                } else if (action === 'skip') {
+                    this.audio.playClick();
+                    ensurePlayer().then(() => {
+                        this._profileCaptainName = '';
+                        this._profileAvatarFile = null;
+                        this._profileAvatarPreview = null;
+                        this.state = STATES.MENU;
+                    });
                 }
             } else if (this.state === STATES.SETTINGS) {
                 const action = this.ui.getPauseClick(cx, cy);
@@ -156,6 +217,12 @@ export class Game {
                     this.audio.playClick();
                     this.state = STATES.MENU;
                 }
+            } else if (this.state === STATES.MAGIC_LINK_SENT) {
+                const action = this.ui.getMagicLinkSentClick(cx, cy);
+                if (action === 'back') {
+                    this.audio.playClick();
+                    this.state = STATES.MENU;
+                }
             } else if (this.state === STATES.AIM && !this.isCurrentPlayerAI()) {
                 // Fire button tap detection
                 const btnW = 90, btnH = 38;
@@ -170,6 +237,44 @@ export class Game {
         // Mouse click
         this.canvas.addEventListener('click', (e) => {
             handleTap(e.clientX, e.clientY);
+        });
+
+        // Pointer cursor on hover over clickable items
+        this.canvas.addEventListener('mousemove', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const scaleX = this.canvas.width / rect.width;
+            const scaleY = this.canvas.height / rect.height;
+            const mx = (e.clientX - rect.left) * scaleX;
+            const my = (e.clientY - rect.top) * scaleY;
+
+            let hovering = false;
+
+            if (this.state === STATES.MENU) {
+                hovering = !!(
+                    this.ui.getMenuClick(mx, my) ||
+                    this.ui.isHowToPlayClick(mx, my) ||
+                    (this.ui.isLeaderboardClick && this.ui.isLeaderboardClick(mx, my)) ||
+                    (this.ui.isMenuSignInClick && this.ui.isMenuSignInClick(mx, my)) ||
+                    (this.ui.isMenuSignOutClick && this.ui.isMenuSignOutClick(mx, my)) ||
+                    (this.ui.isMenuUsernameClick && this.ui.isMenuUsernameClick(mx, my))
+                );
+            } else if (this.state === STATES.VICTORY) {
+                hovering = !!(this.ui.isPlayAgainClick(mx, my));
+            } else if (this.state === STATES.SIGNIN) {
+                hovering = !!(this.ui.getSignInClick && this.ui.getSignInClick(mx, my));
+            } else if (this.state === STATES.PROFILE_SETUP) {
+                hovering = !!(this.ui.getProfileSetupClick && this.ui.getProfileSetupClick(mx, my));
+            } else if (this.state === STATES.SETTINGS) {
+                hovering = !!(this.ui.getPauseClick && this.ui.getPauseClick(mx, my));
+            } else if (this.state === STATES.HOWTOPLAY) {
+                hovering = !!(this.ui.getHowToPlayClick && this.ui.getHowToPlayClick(mx, my));
+            } else if (this.state === STATES.LEADERBOARD) {
+                hovering = !!(this.ui.getLeaderboardClick && this.ui.getLeaderboardClick(mx, my));
+            } else if (this.state === STATES.MAGIC_LINK_SENT) {
+                hovering = !!(this.ui.getMagicLinkSentClick && this.ui.getMagicLinkSentClick(mx, my));
+            }
+
+            this.canvas.style.cursor = hovering ? 'pointer' : 'default';
         });
 
         // Touch tap — fires on touchend for taps (short touches that don't drag)
@@ -254,6 +359,55 @@ export class Game {
         this.vfx = [];
         this.creatures.reset();
         this.matchSaved = false;
+    }
+
+    _openAvatarPicker() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/jpeg,image/png,image/webp,image/gif';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+
+        const cleanup = () => {
+            if (input.parentNode) document.body.removeChild(input);
+        };
+
+        input.addEventListener('change', () => {
+            const file = input.files[0];
+            if (file && file.size <= 2 * 1024 * 1024) {
+                this._profileAvatarFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this._profileAvatarPreview = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else if (file) {
+                alert('Image must be under 2MB');
+            }
+            cleanup();
+        });
+
+        // Handle cancel: when focus returns without a file change
+        window.addEventListener('focus', () => {
+            setTimeout(cleanup, 300);
+        }, { once: true });
+
+        input.click();
+    }
+
+    setupAuthListener() {
+        onAuthStateChange(async (event, _session) => {
+            if (event === 'SIGNED_IN') {
+                await refreshAuthCache();
+                const needs = await needsProfileSetup();
+                if (needs && this.state === STATES.MENU) {
+                    this._profileCaptainName = '';
+                    this._profileAvatarFile = null;
+                    this._profileAvatarPreview = null;
+                    this.state = STATES.PROFILE_SETUP;
+                }
+            }
+        });
     }
 
     async _saveMatchResult() {
@@ -509,6 +663,10 @@ export class Game {
             });
         } else if (this.state === STATES.SIGNIN) {
             this.ui.drawSignInPrompt();
+        } else if (this.state === STATES.MAGIC_LINK_SENT) {
+            this.ui.drawMagicLinkSent(this._magicLinkEmail || '');
+        } else if (this.state === STATES.PROFILE_SETUP) {
+            this.ui.drawProfileSetup(this._profileCaptainName || '', this._profileAvatarPreview || null);
         } else if (this.state === STATES.LEADERBOARD) {
             this.ui.drawLeaderboard(this.leaderboardData || []);
         } else if (this.state === STATES.SETTINGS) {
