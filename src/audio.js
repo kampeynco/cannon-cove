@@ -31,8 +31,25 @@ export class AudioManager {
 
     playHit() {
         if (!this.enabled || !this.audioCtx) return;
-        this.playNoise(0.4, 0.01, 0.2, 150, 50);
-        setTimeout(() => this.playNoise(0.15, 0.1, 0.3, 400, 100), 100);
+        const now = this.audioCtx.currentTime;
+        // Sharp cannon impact crack
+        this.playNoise(0.5, 0.005, 0.08, 3000, 800);
+        // Resonant boom
+        const boom = this.audioCtx.createOscillator();
+        const boomGain = this.audioCtx.createGain();
+        boom.connect(boomGain);
+        boomGain.connect(this.audioCtx.destination);
+        boom.type = 'sine';
+        boom.frequency.setValueAtTime(80, now);
+        boom.frequency.exponentialRampToValueAtTime(30, now + 0.4);
+        boomGain.gain.setValueAtTime(0.35, now);
+        boomGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        boom.start(now);
+        boom.stop(now + 0.4);
+        // Splintering wood debris
+        setTimeout(() => this.playNoise(0.2, 0.02, 0.25, 2500, 400), 40);
+        // Low rumble tail
+        setTimeout(() => this.playNoise(0.12, 0.05, 0.35, 200, 50), 80);
     }
 
     playVictory() {
@@ -98,22 +115,64 @@ export class AudioManager {
 
     playKrakenRise() {
         if (!this.enabled || !this.audioCtx) return;
-        const now = this.audioCtx.currentTime;
-        // Deep rumbling growl
-        this.playNoise(0.25, 0.1, 0.7, 120, 40);
-        // Rising dissonant tone for menace
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(this.audioCtx.destination);
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(60, now);
-        osc.frequency.exponentialRampToValueAtTime(200, now + 0.6);
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.12, now + 0.15);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
-        osc.start(now);
-        osc.stop(now + 0.65);
+        const ctx = this.audioCtx;
+        const now = ctx.currentTime;
+
+        // Layer 1: Deep bass drone (menacing sub-bass)
+        const bass = ctx.createOscillator();
+        const bassGain = ctx.createGain();
+        bass.connect(bassGain);
+        bassGain.connect(ctx.destination);
+        bass.type = 'sawtooth';
+        bass.frequency.setValueAtTime(35, now);
+        bass.frequency.linearRampToValueAtTime(55, now + 1.0);
+        bassGain.gain.setValueAtTime(0, now);
+        bassGain.gain.linearRampToValueAtTime(0.22, now + 0.2);
+        bassGain.gain.setValueAtTime(0.22, now + 0.7);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+        bass.start(now);
+        bass.stop(now + 1.2);
+
+        // Layer 2: Distorted mid growl with waveshaper
+        const growl = ctx.createOscillator();
+        const growlGain = ctx.createGain();
+        const distortion = ctx.createWaveShaper();
+        const curve = new Float32Array(256);
+        for (let i = 0; i < 256; i++) {
+            const x = (i * 2) / 256 - 1;
+            curve[i] = (Math.PI + 50) * x / (Math.PI + 50 * Math.abs(x));
+        }
+        distortion.curve = curve;
+        growl.connect(distortion);
+        distortion.connect(growlGain);
+        growlGain.connect(ctx.destination);
+        growl.type = 'square';
+        growl.frequency.setValueAtTime(45, now + 0.1);
+        growl.frequency.linearRampToValueAtTime(90, now + 0.5);
+        growl.frequency.linearRampToValueAtTime(65, now + 0.9);
+        growlGain.gain.setValueAtTime(0, now + 0.1);
+        growlGain.gain.linearRampToValueAtTime(0.15, now + 0.35);
+        growlGain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+        growl.start(now + 0.1);
+        growl.stop(now + 1.0);
+
+        // Layer 3: Bubbling water noise
+        this.playNoise(0.18, 0.15, 0.8, 300, 60);
+        // Layer 4: High-freq tension screech
+        setTimeout(() => {
+            const screech = ctx.createOscillator();
+            const sGain = ctx.createGain();
+            screech.connect(sGain);
+            sGain.connect(ctx.destination);
+            screech.type = 'sawtooth';
+            screech.frequency.setValueAtTime(150, ctx.currentTime);
+            screech.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.3);
+            sGain.gain.setValueAtTime(0, ctx.currentTime);
+            sGain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.1);
+            sGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+            screech.start(ctx.currentTime);
+            screech.stop(ctx.currentTime + 0.35);
+        }, 200);
     }
 
     playTone(freq, startTime, duration, volume) {
