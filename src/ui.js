@@ -280,12 +280,12 @@ export class UIManager {
             const isResume = btn.id === 'resume';
             const isExit = btn.id === 'exit';
             const isHtp = btn.id === 'howtoplay';
-            ctx.fillStyle = isResume ? COLORS.sunsetGold : isExit ? '#8B2020' : isHtp ? '#1A3A5C' : COLORS.warmBrown;
+            ctx.fillStyle = isResume ? COLORS.sunsetGold : isExit ? '#5C3A1E' : isHtp ? '#1A3A5C' : COLORS.warmBrown;
             this.drawRoundedRect(bounds.x, bounds.y, btnWidth, btnHeight, 8);
             ctx.fill();
 
             // Button border
-            ctx.strokeStyle = isResume ? '#D4941E' : isExit ? '#5C1010' : isHtp ? '#0F2840' : '#6B4226';
+            ctx.strokeStyle = isResume ? '#D4941E' : isExit ? '#3D2512' : isHtp ? '#0F2840' : '#6B4226';
             ctx.lineWidth = 2;
             this.drawRoundedRect(bounds.x, bounds.y, btnWidth, btnHeight, 8);
             ctx.stroke();

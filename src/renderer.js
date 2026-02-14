@@ -391,24 +391,24 @@ export class Renderer {
                 ctx.stroke();
 
                 // ── Gold coins filling the chest ──
-                // Draw coins as warm gold-brown overlapping ellipses
+                // Draw coins as bright yellow overlapping ellipses
                 const drawCoin = (cx, cy, r, tilt) => {
                     // Coin edge (visible thickness)
-                    ctx.fillStyle = '#9A7200';
+                    ctx.fillStyle = '#C8A000';
                     ctx.beginPath();
                     ctx.ellipse(cx, cy + r * 0.3, r, r * tilt, 0, 0, Math.PI);
                     ctx.fill();
-                    // Coin face
-                    ctx.fillStyle = '#D4A030';
+                    // Coin face (bright yellow)
+                    ctx.fillStyle = '#FFD700';
                     ctx.beginPath();
                     ctx.ellipse(cx, cy, r, r * tilt, 0, 0, Math.PI * 2);
                     ctx.fill();
                     // Outline
-                    ctx.strokeStyle = '#8A6010';
+                    ctx.strokeStyle = '#B8960A';
                     ctx.lineWidth = 0.7;
                     ctx.stroke();
                     // Shine highlight
-                    ctx.fillStyle = 'rgba(240,220,160,0.5)';
+                    ctx.fillStyle = 'rgba(255,255,200,0.55)';
                     ctx.beginPath();
                     ctx.ellipse(cx - r * 0.2, cy - r * tilt * 0.2, r * 0.35, r * 0.25 * tilt, -0.3, 0, Math.PI * 2);
                     ctx.fill();
@@ -417,30 +417,40 @@ export class Renderer {
                 // Heaped coins (messy overlapping pile inside chest)
                 const coinHeap = [
                     // Bottom row (inside chest, partially hidden)
-                    { cx: -20, cy: -ch - 1, r: 5.5, t: 0.45 },
-                    { cx: -10, cy: -ch, r: 5, t: 0.5 },
-                    { cx: 0, cy: -ch - 1, r: 5.5, t: 0.45 },
-                    { cx: 10, cy: -ch, r: 5, t: 0.5 },
-                    { cx: 20, cy: -ch - 1, r: 5.5, t: 0.45 },
-                    // Middle row
-                    { cx: -16, cy: -ch - 4, r: 5, t: 0.45 },
-                    { cx: -5, cy: -ch - 5, r: 5.5, t: 0.5 },
-                    { cx: 6, cy: -ch - 4, r: 5, t: 0.45 },
-                    { cx: 16, cy: -ch - 3, r: 5, t: 0.5 },
+                    { cx: -22, cy: -ch - 1, r: 5.5, t: 0.45 },
+                    { cx: -12, cy: -ch, r: 5, t: 0.5 },
+                    { cx: -2, cy: -ch - 1, r: 5.5, t: 0.45 },
+                    { cx: 8, cy: -ch, r: 5, t: 0.5 },
+                    { cx: 18, cy: -ch - 1, r: 5.5, t: 0.45 },
+                    // Second row
+                    { cx: -18, cy: -ch - 3, r: 5, t: 0.45 },
+                    { cx: -7, cy: -ch - 4, r: 5.5, t: 0.5 },
+                    { cx: 4, cy: -ch - 3, r: 5, t: 0.45 },
+                    { cx: 14, cy: -ch - 4, r: 5, t: 0.5 },
+                    { cx: 22, cy: -ch - 2, r: 4.5, t: 0.45 },
+                    // Third row
+                    { cx: -14, cy: -ch - 7, r: 5, t: 0.45 },
+                    { cx: -3, cy: -ch - 8, r: 5.5, t: 0.5 },
+                    { cx: 8, cy: -ch - 7, r: 5, t: 0.45 },
+                    { cx: 18, cy: -ch - 6, r: 4.5, t: 0.5 },
                     // Top row
-                    { cx: -12, cy: -ch - 8, r: 4.5, t: 0.45 },
-                    { cx: 2, cy: -ch - 9, r: 5, t: 0.5 },
-                    { cx: 14, cy: -ch - 7, r: 4.5, t: 0.45 },
+                    { cx: -8, cy: -ch - 11, r: 4.5, t: 0.45 },
+                    { cx: 4, cy: -ch - 12, r: 5, t: 0.5 },
+                    { cx: 14, cy: -ch - 10, r: 4.5, t: 0.45 },
                     // Peak coins
-                    { cx: -4, cy: -ch - 12, r: 4, t: 0.5 },
-                    { cx: 8, cy: -ch - 11, r: 4, t: 0.45 },
+                    { cx: -2, cy: -ch - 14, r: 4, t: 0.5 },
+                    { cx: 8, cy: -ch - 13, r: 4, t: 0.45 },
                 ];
-                // Spilling coins outside chest
+                // Spilling coins outside chest (more overflowing)
                 const spillCoins = [
-                    { cx: -cw - 5, cy: -4, r: 5, t: 0.5 },
-                    { cx: -cw - 1, cy: -1, r: 4, t: 0.45 },
-                    { cx: cw + 4, cy: -3, r: 5, t: 0.5 },
-                    { cx: cw + 1, cy: 0, r: 4, t: 0.45 },
+                    { cx: -cw - 8, cy: -2, r: 5, t: 0.5 },
+                    { cx: -cw - 3, cy: 0, r: 4.5, t: 0.45 },
+                    { cx: -cw - 12, cy: 1, r: 4, t: 0.55 },
+                    { cx: -cw + 2, cy: 2, r: 4, t: 0.5 },
+                    { cx: cw + 7, cy: -2, r: 5, t: 0.5 },
+                    { cx: cw + 2, cy: 0, r: 4.5, t: 0.45 },
+                    { cx: cw + 11, cy: 1, r: 4, t: 0.55 },
+                    { cx: cw - 2, cy: 2, r: 3.5, t: 0.5 },
                 ];
 
                 // Draw heap coins (interleave with gems)
@@ -531,9 +541,35 @@ export class Renderer {
                 drawGem(chestX - 14, chestBaseY - ch - 9, 4, '#F06090', '#A03060');
 
                 // Draw top coins (on top of gems)
-                coinHeap.slice(9).forEach(c => {
+                coinHeap.slice(10).forEach(c => {
                     drawCoin(chestX + c.cx, chestBaseY + c.cy, c.r, c.t);
                 });
+
+                // ── Golden chalice/cup on top of heap ──
+                const cupX = chestX - 1, cupY = chestBaseY - ch - 16;
+                // Cup bowl
+                ctx.fillStyle = '#D4A030';
+                ctx.beginPath();
+                ctx.ellipse(cupX, cupY, 5, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#C89020';
+                ctx.fillRect(cupX - 5, cupY, 10, 4);
+                ctx.beginPath();
+                ctx.ellipse(cupX, cupY + 4, 5, 2.5, 0, 0, Math.PI);
+                ctx.fill();
+                // Stem
+                ctx.fillStyle = '#B88018';
+                ctx.fillRect(cupX - 1.5, cupY + 5, 3, 4);
+                // Base
+                ctx.fillStyle = '#D4A030';
+                ctx.beginPath();
+                ctx.ellipse(cupX, cupY + 9, 4, 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Shine
+                ctx.fillStyle = 'rgba(255,255,200,0.5)';
+                ctx.beginPath();
+                ctx.ellipse(cupX - 2, cupY + 1, 2, 1.5, -0.3, 0, Math.PI * 2);
+                ctx.fill();
 
                 // Draw spilling coins
                 spillCoins.forEach(c => {
