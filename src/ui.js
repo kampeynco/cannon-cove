@@ -361,78 +361,96 @@ export class UIManager {
         const cx = canvas.width / 2;
         const h = canvas.height;
         const compact = h < 450;
-        const margin = compact ? 20 : 40;
-        const contentW = Math.min(canvas.width - margin * 2, 600);
-        const leftX = cx - contentW / 2;
 
-        ctx.fillStyle = 'rgba(5, 13, 26, 0.96)';
+        // Full overlay
+        ctx.fillStyle = 'rgba(5, 13, 26, 0.97)';
         ctx.fillRect(0, 0, canvas.width, h);
 
-        const titleY = compact ? 24 : 40;
+        // Title
+        const titleY = compact ? 22 : 38;
         ctx.fillStyle = COLORS.sunsetGold;
-        ctx.font = `bold ${compact ? 24 : 32}px "Pirata One", Georgia, serif`;
+        ctx.font = `bold ${compact ? 26 : 36}px "Pirata One", Georgia, serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('📖 How to Play', cx, titleY);
+        ctx.fillText('How to Play', cx, titleY);
 
-        ctx.strokeStyle = 'rgba(244, 166, 35, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(leftX, titleY + 20);
-        ctx.lineTo(leftX + contentW, titleY + 20);
-        ctx.stroke();
+        // Cards data
+        const pages = this._getHelpCards();
+        const cards = pages[Math.min(page, pages.length - 1)];
 
-        const pages = this._getHelpPages();
-        const currentPage = pages[Math.min(page, pages.length - 1)];
-        let y = titleY + (compact ? 30 : 44);
+        // Card layout
+        const cols = compact ? 2 : (canvas.width > 700 ? 3 : 2);
+        const cardGap = compact ? 8 : 14;
+        const maxCardW = compact ? 200 : 240;
+        const totalW = cols * maxCardW + (cols - 1) * cardGap;
+        const gridLeft = cx - totalW / 2;
+        const cardStartY = titleY + (compact ? 28 : 50);
+        const cardH = compact ? 100 : 130;
 
-        for (const section of currentPage) {
+        this.htpNextBounds = null;
+        this.htpPrevBounds = null;
+
+        cards.forEach((card, i) => {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const cardX = gridLeft + col * (maxCardW + cardGap);
+            const cardY = cardStartY + row * (cardH + cardGap);
+
+            // Card background
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.05)';
+            this.drawRoundedRect(cardX, cardY, maxCardW, cardH, 10);
+            ctx.fill();
+
+            // Accent bar on left
+            ctx.fillStyle = card.accent;
+            this.drawRoundedRect(cardX, cardY, 4, cardH, 2);
+            ctx.fill();
+
+            // Large emoji icon
+            ctx.font = `${compact ? 24 : 32}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(card.icon, cardX + (compact ? 22 : 28), cardY + (compact ? 24 : 30));
+
+            // Card title
             ctx.fillStyle = COLORS.sunsetGold;
             ctx.font = `bold ${compact ? 13 : 16}px Inter, sans-serif`;
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
-            ctx.fillText(section.title, leftX, y);
-            y += compact ? 16 : 22;
+            ctx.fillText(card.title, cardX + (compact ? 42 : 54), cardY + (compact ? 10 : 14));
 
-            ctx.fillStyle = COLORS.sailCream;
-            ctx.font = `${compact ? 11 : 13}px Inter, sans-serif`;
-            for (const item of section.items) {
-                const lines = this._wrapText(item, contentW - 16, ctx);
-                for (const line of lines) {
-                    ctx.fillText(line, leftX + 8, y);
-                    y += compact ? 14 : 17;
-                }
-                y += 2;
+            // Card description (wrapped)
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.8)';
+            ctx.font = `${compact ? 10.5 : 13}px Inter, sans-serif`;
+            const descX = cardX + (compact ? 12 : 16);
+            const descW = maxCardW - (compact ? 24 : 32);
+            let descY = cardY + (compact ? 42 : 50);
+            const lines = this._wrapText(card.desc, descW, ctx);
+            for (const line of lines) {
+                ctx.fillText(line, descX, descY);
+                descY += compact ? 13 : 16;
             }
-            y += compact ? 6 : 12;
-        }
+        });
 
         // Page indicator
         if (pages.length > 1) {
             ctx.fillStyle = 'rgba(245, 240, 232, 0.4)';
-            ctx.font = `${compact ? 11 : 13}px Inter, sans-serif`;
+            ctx.font = `${compact ? 12 : 14}px Inter, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(`Page ${page + 1} of ${pages.length}`, cx, h - (compact ? 48 : 62));
-        }
+            ctx.fillText(`${page + 1} / ${pages.length}`, cx, h - (compact ? 48 : 58));
 
-        // Nav buttons
-        const navY = h - (compact ? 36 : 46);
-        const btnW = compact ? 90 : 110;
-        const btnH = compact ? 28 : 34;
+            // Next / Prev buttons
+            const navY = h - (compact ? 36 : 46);
+            const btnW = compact ? 80 : 100;
+            const btnH = compact ? 28 : 34;
 
-        this.htpBackBounds = { x: cx - btnW / 2, y: navY, w: btnW, h: btnH };
-        this.htpNextBounds = null;
-        this.htpPrevBounds = null;
-
-        if (pages.length > 1) {
-            this.htpBackBounds.x = cx - btnW / 2;
             if (page > 0) {
-                this.htpPrevBounds = { x: cx - btnW * 1.7, y: navY, w: btnW, h: btnH };
+                this.htpPrevBounds = { x: cx - btnW - 60, y: navY, w: btnW, h: btnH };
                 ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
                 this.drawRoundedRect(this.htpPrevBounds.x, navY, btnW, btnH, 6);
                 ctx.fill();
-                ctx.strokeStyle = 'rgba(245, 240, 232, 0.25)';
+                ctx.strokeStyle = 'rgba(245, 240, 232, 0.2)';
                 ctx.lineWidth = 1;
                 this.drawRoundedRect(this.htpPrevBounds.x, navY, btnW, btnH, 6);
                 ctx.stroke();
@@ -442,8 +460,9 @@ export class UIManager {
                 ctx.textBaseline = 'middle';
                 ctx.fillText('← Prev', this.htpPrevBounds.x + btnW / 2, navY + btnH / 2);
             }
+
             if (page < pages.length - 1) {
-                this.htpNextBounds = { x: cx + btnW * 0.7, y: navY, w: btnW, h: btnH };
+                this.htpNextBounds = { x: cx + 60, y: navY, w: btnW, h: btnH };
                 ctx.fillStyle = COLORS.sunsetGold;
                 this.drawRoundedRect(this.htpNextBounds.x, navY, btnW, btnH, 6);
                 ctx.fill();
@@ -455,75 +474,86 @@ export class UIManager {
             }
         }
 
-        // Back button
+        // Back button (always)
+        const backY = h - (compact ? 36 : 46);
+        const backW = compact ? 80 : 100;
+        const backH = compact ? 28 : 34;
+        this.htpBackBounds = { x: cx - backW / 2, y: backY, w: backW, h: backH };
+
         ctx.fillStyle = COLORS.warmBrown;
-        this.drawRoundedRect(this.htpBackBounds.x, navY, btnW, btnH, 6);
+        this.drawRoundedRect(this.htpBackBounds.x, backY, backW, backH, 6);
         ctx.fill();
         ctx.fillStyle = COLORS.sailCream;
         ctx.font = `bold ${compact ? 12 : 14}px Inter, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('← Back', this.htpBackBounds.x + btnW / 2, navY + btnH / 2);
+        ctx.fillText('← Back', this.htpBackBounds.x + backW / 2, backY + backH / 2);
     }
 
-    _getHelpPages() {
+    _getHelpCards() {
         return [
             [
                 {
-                    title: '🎯 Controls',
-                    items: [
-                        '• Drag on the screen to aim your cannon — direction sets the angle, distance sets the power.',
-                        '• Release to fire your cannonball at the enemy ship.',
-                        '• Tap the FIRE button to launch when ready.',
-                        '• Press ESC to open the pause menu at any time.',
-                    ],
+                    icon: '🎯', title: 'Aim & Fire',
+                    desc: 'Drag anywhere on screen to aim your cannon. The direction sets your angle and the drag distance sets power. Release or tap FIRE to launch!',
+                    accent: '#F4A623',
                 },
                 {
-                    title: '🎮 Game Modes',
-                    items: [
-                        '⚔️ Duel — Challenge the AI captain in a 1v1 artillery battle.',
-                        '🏴‍☠️ Crew Battle — Play with a friend on the same device.',
-                        '👻 Ghost Fleet — Watch two AI captains battle it out.',
-                    ],
+                    icon: '💨', title: 'Wind',
+                    desc: 'Wind pushes your cannonball mid-flight. Check the arrow and number at the top of the screen, then adjust your aim to compensate.',
+                    accent: '#5BA4E6',
                 },
                 {
-                    title: '💨 Wind',
-                    items: [
-                        '• Wind pushes your cannonball left or right during flight.',
-                        '• Check the indicator at the top — arrows show direction, number shows strength.',
-                        '• Adjust your aim to compensate! Wind changes each round.',
-                    ],
+                    icon: '⚔️', title: 'Duel Mode',
+                    desc: 'Challenge an AI captain in a 1-on-1 artillery battle. Outsmart and outshoot your opponent to sink their ship!',
+                    accent: '#E74C3C',
+                },
+                {
+                    icon: '🏴‍☠️', title: 'Crew Battle',
+                    desc: 'Grab a friend! Two players take turns on the same device. Perfect for quick head-to-head pirate duels.',
+                    accent: '#2ECC71',
+                },
+                {
+                    icon: '👻', title: 'Ghost Fleet',
+                    desc: 'Sit back and watch two AI captains battle it out. Great for learning strategy by observing.',
+                    accent: '#9B59B6',
+                },
+                {
+                    icon: '⏸️', title: 'Pause',
+                    desc: 'Press ESC anytime during gameplay to pause. From there you can toggle sound, exit to menu, or view this guide.',
+                    accent: '#95A5A6',
                 },
             ],
             [
                 {
-                    title: '🎁 Power-Ups',
-                    items: [
-                        '• Floating crates appear on the water between ships.',
-                        '• Hit a crate with your cannonball to collect its power-up.',
-                        '🔥 Fire Shot — Deals double damage to the enemy ship.',
-                        '🛡️ Shield — Blocks the next incoming hit.',
-                        '🌊 Tidal Wave — Shifts the wind dramatically.',
-                    ],
+                    icon: '🔥', title: 'Fire Shot',
+                    desc: 'Hit a floating crate to grab this power-up. Your next cannonball deals double damage — devastating!',
+                    accent: '#E67E22',
                 },
                 {
-                    title: '💡 Strategy Tips',
-                    items: [
-                        '• Start with ~45° angle for maximum range, then adjust.',
-                        '• Strong wind can carry your shot off course — compensate!',
-                        '• Aim for power-up crates — they can turn the tide of battle.',
-                        '• Ships tilt and catch fire as they take damage.',
-                        '• Each ship has 4 HP shown as flags at the top.',
-                    ],
+                    icon: '🛡️', title: 'Shield',
+                    desc: 'Activates a protective barrier around your ship. The next incoming hit is completely blocked.',
+                    accent: '#3498DB',
                 },
                 {
-                    title: '📊 HUD Guide',
-                    items: [
-                        '• Top corners: Player health (🏴‍☠️ = alive, ☠️ = lost).',
-                        '• Top center: Round number and wind speed/direction.',
-                        '• Bottom center: FIRE button (during your turn).',
-                        '• Bottom right: ESC = Pause reminder.',
-                    ],
+                    icon: '🌊', title: 'Tidal Wave',
+                    desc: 'Dramatically shifts the wind direction and strength. Can throw off your opponent\'s careful aim!',
+                    accent: '#1ABC9C',
+                },
+                {
+                    icon: '🏴‍☠️', title: 'Health Flags',
+                    desc: 'Each ship has 4 HP shown as flags at the top corners. Pirate flags mean health remaining, skulls mean damage taken.',
+                    accent: '#E74C3C',
+                },
+                {
+                    icon: '🔥', title: 'Damage Effects',
+                    desc: 'As ships take hits, they show holes, start tilting, emit smoke at 2 HP, and catch fire at 1 HP. Watch for the flames!',
+                    accent: '#F39C12',
+                },
+                {
+                    icon: '💡', title: 'Pro Tip',
+                    desc: 'Start at ~45° for max range. Aim for floating crates when they appear — power-ups can completely turn the tide of battle!',
+                    accent: '#F1C40F',
                 },
             ],
         ];
