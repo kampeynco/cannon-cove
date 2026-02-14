@@ -298,7 +298,39 @@ Build **Cannon Cove**, a cross-platform artillery game inspired by QBasic Gorill
 
 - [ ] Discord server setup (channels: general, high-scores, ship-designs, bugs)
 - [ ] GitHub repo cleanup (README, LICENSE, CONTRIBUTING.md)
-- [ ] Itch.io page for indie gaming audience
+
+### 5.5 Itch.io Distribution
+
+> **Goal:** Reach the indie gaming community on itch.io with a polished HTML5 game page.
+
+#### Page Setup
+- [ ] Create itch.io developer account and game page
+- [ ] Upload HTML5 build (`dist/` folder as .zip) as a playable web game
+- [ ] Configure embed settings: viewport size 1024×768, fullscreen allowed, mobile-friendly
+- [ ] Set game type: **HTML / Web**, genre: **Action / Strategy**, tags: `artillery`, `pirate`, `browser-game`, `html5`, `canvas`, `multiplayer`
+
+#### Page Content
+- [ ] Write compelling game description with gameplay GIFs
+- [ ] Upload 4–6 screenshots (main menu, gameplay, leaderboard, treasure chest, sea creatures)
+- [ ] Create cover image (630×500) and banner (960×540) using game assets
+- [ ] Add devlog post: *"Building a Pirate Artillery Game with Vanilla JS & Canvas"*
+- [ ] Link to live web version (cannoncove.app), Discord, and GitHub
+
+#### Pricing & Analytics
+- [ ] Set pricing: **Free** with optional "Name your price" / tip support
+- [ ] Enable itch.io analytics for download and play tracking
+- [ ] Add donation goal for development milestones
+
+#### Community & Visibility
+- [ ] Submit to itch.io game jams (if timing aligns)
+- [ ] Enable comments and community tab on game page
+- [ ] Cross-promote: link itch.io page from Product Hunt, Reddit, and 𝕏 posts
+- [ ] Add itch.io badge/link to the game's main menu or footer
+
+#### CI/CD Integration
+- [ ] Add build script to generate itch.io-ready .zip from `dist/`
+- [ ] Document manual upload process (or automate via [butler](https://itch.io/docs/butler/) CLI)
+- [ ] Version tagging: match itch.io uploads to git tags
 
 ---
 
