@@ -349,147 +349,227 @@ export class Renderer {
                 ctx.arc(chestX, chestBaseY - ch + 1, 1.5, 0, Math.PI * 2);
                 ctx.fill();
 
-                // ── Gold heap inside the chest ──
-                // Mound of gold filling the top
-                ctx.fillStyle = '#FFD700';
-                ctx.beginPath();
-                ctx.moveTo(chestX - cw + 3, chestBaseY - ch);
-                ctx.quadraticCurveTo(chestX - cw * 0.5, chestBaseY - ch - 14, chestX, chestBaseY - ch - 16);
-                ctx.quadraticCurveTo(chestX + cw * 0.5, chestBaseY - ch - 12, chestX + cw - 3, chestBaseY - ch);
-                ctx.closePath();
-                ctx.fill();
-                // Gold shading
-                ctx.fillStyle = '#E5B800';
-                ctx.beginPath();
-                ctx.moveTo(chestX - cw + 8, chestBaseY - ch);
-                ctx.quadraticCurveTo(chestX - 5, chestBaseY - ch - 10, chestX + cw - 8, chestBaseY - ch);
-                ctx.closePath();
-                ctx.fill();
-
-                // ── Individual coins (visible on top of heap and spilling out) ──
-                const coins = [
-                    // On top of the gold heap
-                    { cx: -12, cy: -ch - 10, r: 5 },
-                    { cx: 5, cy: -ch - 12, r: 4.5 },
-                    { cx: 14, cy: -ch - 8, r: 5 },
-                    { cx: -4, cy: -ch - 14, r: 4 },
-                    { cx: 8, cy: -ch - 6, r: 4.5 },
-                    { cx: -18, cy: -ch - 5, r: 4 },
-                    // Coins spilling out sides
-                    { cx: -cw - 5, cy: -5, r: 4.5 },
-                    { cx: -cw - 1, cy: -2, r: 4 },
-                    { cx: cw + 4, cy: -4, r: 4 },
-                    { cx: cw + 1, cy: -1, r: 3.5 },
-                ];
-                coins.forEach(coin => {
-                    // Coin body
+                // ── Helper: draw a single coin as a flat disc with visible edge ──
+                const drawCoin = (cx, cy, r, tilt) => {
+                    const edgeH = r * 0.35; // visible edge thickness
+                    // Edge (darker, shows the coin is a disc)
+                    ctx.fillStyle = '#B8860B';
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy + edgeH, r, r * tilt, 0, 0, Math.PI);
+                    ctx.fill();
+                    // Face (top ellipse)
                     ctx.fillStyle = '#FFD700';
                     ctx.beginPath();
-                    ctx.arc(chestX + coin.cx, chestBaseY + coin.cy, coin.r, 0, Math.PI * 2);
+                    ctx.ellipse(cx, cy, r, r * tilt, 0, 0, Math.PI * 2);
                     ctx.fill();
-                    // Coin edge ring
-                    ctx.strokeStyle = '#CC9F00';
-                    ctx.lineWidth = 0.8;
+                    // Outline
+                    ctx.strokeStyle = '#9A7200';
+                    ctx.lineWidth = 1;
                     ctx.stroke();
-                    // Coin shine
-                    ctx.fillStyle = '#FFF5B0';
+                    // Inner ring (makes it look like a coin, not a circle)
+                    ctx.strokeStyle = '#E5B800';
+                    ctx.lineWidth = 0.7;
                     ctx.beginPath();
-                    ctx.arc(chestX + coin.cx - coin.r * 0.25, chestBaseY + coin.cy - coin.r * 0.25, coin.r * 0.35, 0, Math.PI * 2);
+                    ctx.ellipse(cx, cy, r * 0.65, r * 0.65 * tilt, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // Light catch
+                    ctx.fillStyle = 'rgba(255,255,230,0.45)';
+                    ctx.beginPath();
+                    ctx.ellipse(cx - r * 0.2, cy - r * tilt * 0.15, r * 0.3, r * 0.2 * tilt, -0.3, 0, Math.PI * 2);
                     ctx.fill();
-                });
+                };
 
-                // ── Ruby (large diamond-cut gem) ──
-                const rX = chestX + 2, rY = chestBaseY - ch - 13;
-                ctx.fillStyle = '#DC143C';
-                ctx.beginPath();
-                ctx.moveTo(rX, rY - 7);
-                ctx.lineTo(rX + 6, rY - 2);
-                ctx.lineTo(rX + 4, rY + 4);
-                ctx.lineTo(rX - 4, rY + 4);
-                ctx.lineTo(rX - 6, rY - 2);
-                ctx.closePath();
-                ctx.fill();
-                ctx.strokeStyle = '#8B0000';
-                ctx.lineWidth = 0.8;
-                ctx.stroke();
-                // Facet shine
-                ctx.fillStyle = 'rgba(255,150,180,0.6)';
-                ctx.beginPath();
-                ctx.moveTo(rX - 1, rY - 5);
-                ctx.lineTo(rX + 3, rY - 2);
-                ctx.lineTo(rX + 1, rY + 1);
-                ctx.lineTo(rX - 3, rY - 1);
-                ctx.closePath();
-                ctx.fill();
-
-                // ── Emerald (octagonal cut) ──
-                const eX = chestX - 14, eY = chestBaseY - ch - 9;
-                ctx.fillStyle = '#2ECC40';
-                ctx.beginPath();
-                ctx.moveTo(eX - 2, eY - 5);
-                ctx.lineTo(eX + 2, eY - 5);
-                ctx.lineTo(eX + 5, eY - 2);
-                ctx.lineTo(eX + 5, eY + 2);
-                ctx.lineTo(eX + 2, eY + 5);
-                ctx.lineTo(eX - 2, eY + 5);
-                ctx.lineTo(eX - 5, eY + 2);
-                ctx.lineTo(eX - 5, eY - 2);
-                ctx.closePath();
-                ctx.fill();
-                ctx.strokeStyle = '#1A7A25';
-                ctx.lineWidth = 0.8;
-                ctx.stroke();
-                ctx.fillStyle = 'rgba(150,255,180,0.5)';
-                ctx.fillRect(eX - 2, eY - 3, 3, 4);
-
-                // ── Sapphire (round brilliant) ──
-                const sX = chestX + 16, sY = chestBaseY - ch - 7;
-                ctx.fillStyle = '#2563EB';
-                ctx.beginPath();
-                ctx.arc(sX, sY, 5, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#1D3A8A';
-                ctx.lineWidth = 0.8;
-                ctx.stroke();
-                ctx.fillStyle = 'rgba(150,190,255,0.6)';
-                ctx.beginPath();
-                ctx.arc(sX - 1.5, sY - 1.5, 2, 0, Math.PI * 2);
-                ctx.fill();
-
-                // ── Animated sparkles ──
-                const t = time;
-                const sparkles = [
-                    { cx: -8, cy: -ch - 12, phase: 0 },
-                    { cx: 12, cy: -ch - 10, phase: 1.5 },
-                    { cx: -20, cy: -ch - 4, phase: 3.0 },
-                    { cx: 20, cy: -ch - 5, phase: 4.5 },
-                    { cx: 0, cy: -ch - 16, phase: 2.2 },
-                ];
-                sparkles.forEach(sp => {
-                    const alpha = Math.max(0, Math.sin(t * 2.5 + sp.phase)) * 0.9;
-                    if (alpha > 0.1) {
-                        const sx = chestX + sp.cx;
-                        const sy = chestBaseY + sp.cy;
-                        const size = 3 + alpha * 2;
-                        ctx.strokeStyle = `rgba(255, 255, 220, ${alpha})`;
-                        ctx.lineWidth = 1.2;
-                        // Star cross
-                        ctx.beginPath();
-                        ctx.moveTo(sx - size, sy);
-                        ctx.lineTo(sx + size, sy);
-                        ctx.moveTo(sx, sy - size);
-                        ctx.lineTo(sx, sy + size);
-                        ctx.stroke();
-                        // Diagonal
-                        ctx.lineWidth = 0.8;
-                        ctx.beginPath();
-                        ctx.moveTo(sx - size * 0.6, sy - size * 0.6);
-                        ctx.lineTo(sx + size * 0.6, sy + size * 0.6);
-                        ctx.moveTo(sx + size * 0.6, sy - size * 0.6);
-                        ctx.lineTo(sx - size * 0.6, sy + size * 0.6);
-                        ctx.stroke();
+                // ── Helper: draw a small pile of stacked coins ──
+                const drawCoinPile = (px, py, count, r, tilt) => {
+                    const stackGap = r * 0.3;
+                    for (let i = 0; i < count; i++) {
+                        drawCoin(px, py - i * stackGap, r, tilt);
                     }
-                });
+                };
+
+                // ── Coin piles inside the chest ──
+                drawCoinPile(chestX - 14, chestBaseY - ch - 2, 5, 6, 0.45);
+                drawCoinPile(chestX + 2, chestBaseY - ch - 1, 6, 5.5, 0.5);
+                drawCoinPile(chestX + 16, chestBaseY - ch - 2, 4, 6, 0.4);
+
+                // ── Loose coins spilling out ──
+                drawCoin(chestX - cw - 6, chestBaseY - 4, 5, 0.5);
+                drawCoin(chestX - cw - 1, chestBaseY - 1, 4.5, 0.45);
+                drawCoin(chestX + cw + 5, chestBaseY - 3, 5, 0.5);
+                drawCoin(chestX + cw + 1, chestBaseY, 4, 0.45);
+                // A couple tilted/fallen coins on the sand
+                drawCoin(chestX - cw - 10, chestBaseY + 1, 4, 0.6);
+                drawCoin(chestX + cw + 9, chestBaseY + 2, 3.5, 0.55);
+
+                // ── Ruby — classic brilliant-cut diamond shape ──
+                const rX = chestX + 2, rY = chestBaseY - ch - 12;
+                // Crown (top triangle)
+                ctx.fillStyle = '#E01030';
+                ctx.beginPath();
+                ctx.moveTo(rX - 7, rY);       // left of girdle
+                ctx.lineTo(rX, rY - 9);   // top point
+                ctx.lineTo(rX + 7, rY);       // right of girdle
+                ctx.closePath();
+                ctx.fill();
+                // Pavilion (bottom triangle)
+                ctx.fillStyle = '#C00020';
+                ctx.beginPath();
+                ctx.moveTo(rX - 7, rY);
+                ctx.lineTo(rX, rY + 6);   // bottom point
+                ctx.lineTo(rX + 7, rY);
+                ctx.closePath();
+                ctx.fill();
+                // Outline
+                ctx.strokeStyle = '#800015';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(rX, rY - 9);
+                ctx.lineTo(rX + 7, rY);
+                ctx.lineTo(rX, rY + 6);
+                ctx.lineTo(rX - 7, rY);
+                ctx.closePath();
+                ctx.stroke();
+                // Girdle line
+                ctx.beginPath();
+                ctx.moveTo(rX - 7, rY);
+                ctx.lineTo(rX + 7, rY);
+                ctx.stroke();
+                // Internal facet lines (crown)
+                ctx.strokeStyle = 'rgba(255,100,120,0.5)';
+                ctx.lineWidth = 0.7;
+                ctx.beginPath();
+                ctx.moveTo(rX, rY - 9);
+                ctx.lineTo(rX - 3, rY);
+                ctx.moveTo(rX, rY - 9);
+                ctx.lineTo(rX + 3, rY);
+                ctx.stroke();
+                // Internal facet lines (pavilion)
+                ctx.beginPath();
+                ctx.moveTo(rX, rY + 6);
+                ctx.lineTo(rX - 4, rY);
+                ctx.moveTo(rX, rY + 6);
+                ctx.lineTo(rX + 4, rY);
+                ctx.stroke();
+                // Light catch
+                ctx.fillStyle = 'rgba(255,200,210,0.55)';
+                ctx.beginPath();
+                ctx.moveTo(rX - 2, rY - 6);
+                ctx.lineTo(rX + 1, rY - 3);
+                ctx.lineTo(rX - 1, rY - 1);
+                ctx.lineTo(rX - 4, rY - 3);
+                ctx.closePath();
+                ctx.fill();
+
+                // ── Emerald — rectangular emerald-cut ──
+                const eX = chestX - 15, eY = chestBaseY - ch - 9;
+                const ew = 7, eh = 9; // half-sizes
+                const ec = 2.5; // corner cut
+                // Main shape with cut corners
+                ctx.fillStyle = '#10A848';
+                ctx.beginPath();
+                ctx.moveTo(eX - ew + ec, eY - eh);
+                ctx.lineTo(eX + ew - ec, eY - eh);
+                ctx.lineTo(eX + ew, eY - eh + ec);
+                ctx.lineTo(eX + ew, eY + eh - ec);
+                ctx.lineTo(eX + ew - ec, eY + eh);
+                ctx.lineTo(eX - ew + ec, eY + eh);
+                ctx.lineTo(eX - ew, eY + eh - ec);
+                ctx.lineTo(eX - ew, eY - eh + ec);
+                ctx.closePath();
+                ctx.fill();
+                // Outline
+                ctx.strokeStyle = '#0A6E30';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                // Step facet lines (horizontal)
+                ctx.strokeStyle = 'rgba(180,255,200,0.4)';
+                ctx.lineWidth = 0.7;
+                for (const fy of [-4, -1, 2, 5]) {
+                    ctx.beginPath();
+                    ctx.moveTo(eX - ew + 1.5, eY + fy);
+                    ctx.lineTo(eX + ew - 1.5, eY + fy);
+                    ctx.stroke();
+                }
+                // Step facet lines (vertical)
+                for (const fx of [-3, 0, 3]) {
+                    ctx.beginPath();
+                    ctx.moveTo(eX + fx, eY - eh + 1.5);
+                    ctx.lineTo(eX + fx, eY + eh - 1.5);
+                    ctx.stroke();
+                }
+                // Light catch
+                ctx.fillStyle = 'rgba(200,255,220,0.4)';
+                ctx.fillRect(eX - 3, eY - 5, 4, 6);
+
+                // ── Sapphire — pear/teardrop cut ──
+                const sX = chestX + 17, sY = chestBaseY - ch - 8;
+                ctx.fillStyle = '#1E50D0';
+                ctx.beginPath();
+                ctx.moveTo(sX, sY - 8);  // top point
+                ctx.quadraticCurveTo(sX + 7, sY - 2, sX + 5, sY + 4);
+                ctx.quadraticCurveTo(sX, sY + 8, sX - 5, sY + 4);
+                ctx.quadraticCurveTo(sX - 7, sY - 2, sX, sY - 8);
+                ctx.closePath();
+                ctx.fill();
+                // Outline
+                ctx.strokeStyle = '#0E2E80';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                // Internal facet lines radiating from top
+                ctx.strokeStyle = 'rgba(130,170,255,0.45)';
+                ctx.lineWidth = 0.7;
+                ctx.beginPath();
+                ctx.moveTo(sX, sY - 8);
+                ctx.lineTo(sX - 4, sY + 3);
+                ctx.moveTo(sX, sY - 8);
+                ctx.lineTo(sX + 4, sY + 3);
+                ctx.moveTo(sX, sY - 8);
+                ctx.lineTo(sX - 2, sY + 5);
+                ctx.moveTo(sX, sY - 8);
+                ctx.lineTo(sX + 2, sY + 5);
+                ctx.stroke();
+                // Horizontal girdle
+                ctx.beginPath();
+                ctx.moveTo(sX - 6, sY);
+                ctx.lineTo(sX + 6, sY);
+                ctx.stroke();
+                // Light catch
+                ctx.fillStyle = 'rgba(180,210,255,0.45)';
+                ctx.beginPath();
+                ctx.moveTo(sX - 1, sY - 5);
+                ctx.lineTo(sX + 2, sY - 2);
+                ctx.lineTo(sX, sY + 1);
+                ctx.lineTo(sX - 3, sY - 1);
+                ctx.closePath();
+                ctx.fill();
+
+                // ── Subtle animated sparkle ──
+                const sparkAlpha = Math.max(0, Math.sin(time * 2.5)) * 0.7;
+                if (sparkAlpha > 0.15) {
+                    const sz = 2.5 + sparkAlpha * 1.5;
+                    ctx.strokeStyle = `rgba(255,255,240,${sparkAlpha})`;
+                    ctx.lineWidth = 1;
+                    // Sparkle near ruby
+                    ctx.beginPath();
+                    ctx.moveTo(rX + 5 - sz, rY - 5);
+                    ctx.lineTo(rX + 5 + sz, rY - 5);
+                    ctx.moveTo(rX + 5, rY - 5 - sz);
+                    ctx.lineTo(rX + 5, rY - 5 + sz);
+                    ctx.stroke();
+                }
+                const sparkAlpha2 = Math.max(0, Math.sin(time * 2.5 + 2.5)) * 0.7;
+                if (sparkAlpha2 > 0.15) {
+                    const sz2 = 2 + sparkAlpha2 * 1.5;
+                    ctx.strokeStyle = `rgba(255,255,240,${sparkAlpha2})`;
+                    ctx.lineWidth = 1;
+                    // Sparkle near sapphire
+                    ctx.beginPath();
+                    ctx.moveTo(sX - 3 - sz2, sY - 4);
+                    ctx.lineTo(sX - 3 + sz2, sY - 4);
+                    ctx.moveTo(sX - 3, sY - 4 - sz2);
+                    ctx.lineTo(sX - 3, sY - 4 + sz2);
+                    ctx.stroke();
+                }
             }
         });
     }
