@@ -1,4 +1,5 @@
 import { COLORS, STATES, MODES, SHIP } from './constants.js';
+import { isAuthenticatedSync, getCachedUsername } from './supabase.js';
 
 export class UIManager {
     constructor(canvas, ctx) {
@@ -113,6 +114,40 @@ export class UIManager {
         ctx.textBaseline = 'middle';
         ctx.fillText('📖  How to Play', cx, htpY + htpH / 2);
 
+        // Leaderboard button
+        const lbY = htpY + htpH + (tiny ? 6 : 8);
+        this._leaderboardBounds = { x: cx - htpW / 2, y: lbY, w: htpW, h: htpH };
+
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
+        this.drawRoundedRect(this._leaderboardBounds.x, lbY, htpW, htpH, 6);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(245, 240, 232, 0.25)';
+        ctx.lineWidth = 1;
+        this.drawRoundedRect(this._leaderboardBounds.x, lbY, htpW, htpH, 6);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.7)';
+        ctx.font = `${tiny ? 10 : compact ? 12 : 14}px Inter, sans-serif`;
+        ctx.fillText('🏆  Leaderboard', cx, lbY + htpH / 2);
+
+        // Sign-in link (guests) or username display (authenticated)
+        const signInY = lbY + htpH + (tiny ? 14 : 22);
+        ctx.font = `${tiny ? 10 : compact ? 12 : 13}px Inter, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        if (isAuthenticatedSync()) {
+            const name = getCachedUsername() || 'Captain';
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.6)';
+            ctx.fillText(`⚓  ${name}`, cx, signInY);
+            this._menuSignInBounds = null;
+        } else {
+            ctx.fillStyle = COLORS.sunsetGold;
+            ctx.fillText('⚓  Sign In / Sign Up', cx, signInY);
+            const signInW = tiny ? 120 : 150;
+            this._menuSignInBounds = { x: cx - signInW / 2, y: signInY - 10, w: signInW, h: 20 };
+        }
+
         // Footer (only on tall screens)
         if (!compact) {
             ctx.fillStyle = 'rgba(245, 240, 232, 0.35)';
@@ -124,6 +159,12 @@ export class UIManager {
     isHowToPlayClick(x, y) {
         if (!this.howToPlayBounds) return false;
         const b = this.howToPlayBounds;
+        return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+    }
+
+    isMenuSignInClick(x, y) {
+        if (!this._menuSignInBounds) return false;
+        const b = this._menuSignInBounds;
         return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
     }
 
@@ -562,4 +603,212 @@ export class UIManager {
         ctx.quadraticCurveTo(x, y, x + r, y);
         ctx.closePath();
     }
+
+    drawSignInPrompt() {
+        const { ctx, canvas } = this;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // Dark overlay
+        ctx.fillStyle = 'rgba(5, 13, 26, 0.85)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Modal dimensions
+        const mw = Math.min(380, canvas.width - 40);
+        const mh = 280;
+        const mx = cx - mw / 2;
+        const my = cy - mh / 2;
+
+        // Modal background (parchment feel)
+        this.drawRoundedRect(mx, my, mw, mh, 16);
+        ctx.fillStyle = '#1A2A3A';
+        ctx.fill();
+        ctx.strokeStyle = COLORS.sunsetGold;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Inner glow border
+        this.drawRoundedRect(mx + 3, my + 3, mw - 6, mh - 6, 13);
+        ctx.strokeStyle = 'rgba(244, 166, 35, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Header emoji
+        ctx.font = '36px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚓', cx, my + 48);
+
+        // Title
+        ctx.font = 'bold 24px "Pirata One", Georgia, serif';
+        ctx.fillStyle = COLORS.sunsetGold;
+        ctx.fillText('Save Your Progress!', cx, my + 80);
+
+        // Subtitle
+        ctx.font = '14px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.7)';
+        ctx.fillText('Sign in to save your stats and', cx, my + 108);
+        ctx.fillText('climb the leaderboard!', cx, my + 126);
+
+        // Google button
+        const btnW = mw - 60;
+        const btnH = 40;
+        const googleY = my + 148;
+        this.drawRoundedRect(cx - btnW / 2, googleY, btnW, btnH, 8);
+        ctx.fillStyle = '#4285F4';
+        ctx.fill();
+        ctx.font = 'bold 15px Inter, sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText('🔵  Sign in with Google', cx, googleY + 26);
+
+        // Email button
+        const emailY = googleY + btnH + 12;
+        this.drawRoundedRect(cx - btnW / 2, emailY, btnW, btnH, 8);
+        ctx.fillStyle = '#2A4A2A';
+        ctx.fill();
+        ctx.strokeStyle = '#4CAF50';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.font = 'bold 15px Inter, sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText('✉️  Sign in with Email', cx, emailY + 26);
+
+        // Skip link
+        const skipY = emailY + btnH + 24;
+        ctx.font = '13px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.5)';
+        ctx.fillText('Maybe Later', cx, skipY);
+
+        // Store bounds for click detection
+        this._signInBounds = {
+            google: { x: cx - btnW / 2, y: googleY, w: btnW, h: btnH },
+            email: { x: cx - btnW / 2, y: emailY, w: btnW, h: btnH },
+            skip: { x: cx - 60, y: skipY - 14, w: 120, h: 20 },
+        };
+    }
+
+    getSignInClick(x, y) {
+        if (!this._signInBounds) return null;
+        const { google, email, skip } = this._signInBounds;
+        if (x >= google.x && x <= google.x + google.w && y >= google.y && y <= google.y + google.h) return 'google';
+        if (x >= email.x && x <= email.x + email.w && y >= email.y && y <= email.y + email.h) return 'email';
+        if (x >= skip.x && x <= skip.x + skip.w && y >= skip.y && y <= skip.y + skip.h) return 'skip';
+        return null;
+    }
+
+    isLeaderboardClick(x, y) {
+        if (!this._leaderboardBounds) return false;
+        const b = this._leaderboardBounds;
+        return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+    }
+
+    drawLeaderboard(entries) {
+        const { ctx, canvas } = this;
+        const cx = canvas.width / 2;
+        const w = canvas.width;
+        const h = canvas.height;
+        const compact = h < 600;
+
+        // Dark overlay
+        ctx.fillStyle = 'rgba(5, 13, 26, 0.92)';
+        ctx.fillRect(0, 0, w, h);
+
+        // Modal
+        const modalW = Math.min(460, w - 40);
+        const modalH = Math.min(500, h - 60);
+        const modalX = cx - modalW / 2;
+        const modalY = (h - modalH) / 2;
+
+        ctx.fillStyle = 'rgba(15, 40, 71, 0.95)';
+        this.drawRoundedRect(modalX, modalY, modalW, modalH, 16);
+        ctx.fill();
+        ctx.strokeStyle = COLORS.sunsetGold;
+        ctx.lineWidth = 2;
+        this.drawRoundedRect(modalX, modalY, modalW, modalH, 16);
+        ctx.stroke();
+
+        // Title
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = COLORS.sunsetGold;
+        ctx.font = `bold ${compact ? 20 : 26}px 'Pirata One', cursive`;
+        ctx.fillText('🏆 Leaderboard', cx, modalY + (compact ? 28 : 36));
+
+        // Column headers
+        const headerY = modalY + (compact ? 56 : 72);
+        ctx.font = `bold ${compact ? 11 : 12}px Inter, sans-serif`;
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.5)';
+        ctx.textAlign = 'left';
+        ctx.fillText('RANK', modalX + 20, headerY);
+        ctx.fillText('PLAYER', modalX + 60, headerY);
+        ctx.textAlign = 'right';
+        ctx.fillText('WINS', modalX + modalW - 110, headerY);
+        ctx.fillText('WIN%', modalX + modalW - 50, headerY);
+        ctx.fillText('ACC%', modalX + modalW - 20, headerY);
+
+        // Divider
+        ctx.strokeStyle = 'rgba(245, 240, 232, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(modalX + 16, headerY + 12);
+        ctx.lineTo(modalX + modalW - 16, headerY + 12);
+        ctx.stroke();
+
+        // Entries
+        const rowH = compact ? 28 : 32;
+        const startRowY = headerY + 24;
+        const maxRows = Math.min(entries.length, Math.floor((modalY + modalH - startRowY - 50) / rowH));
+
+        const medals = ['🥇', '🥈', '🥉'];
+
+        for (let i = 0; i < maxRows; i++) {
+            const e = entries[i];
+            const rowY = startRowY + i * rowH;
+
+            // Alternate row bg
+            if (i % 2 === 0) {
+                ctx.fillStyle = 'rgba(245, 240, 232, 0.04)';
+                ctx.fillRect(modalX + 12, rowY - rowH / 2 + 4, modalW - 24, rowH);
+            }
+
+            ctx.font = `${compact ? 12 : 14}px Inter, sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.fillStyle = i < 3 ? COLORS.sunsetGold : COLORS.sailCream;
+            ctx.fillText(medals[i] || `#${e.rank}`, modalX + 20, rowY);
+
+            const name = e.username || 'Anonymous';
+            ctx.fillStyle = COLORS.sailCream;
+            ctx.fillText(name.length > 16 ? name.slice(0, 15) + '…' : name, modalX + 60, rowY);
+
+            ctx.textAlign = 'right';
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.8)';
+            ctx.fillText(e.total_wins, modalX + modalW - 110, rowY);
+            ctx.fillText(`${e.win_rate}%`, modalX + modalW - 50, rowY);
+            ctx.fillText(`${Math.round(e.accuracy_pct)}%`, modalX + modalW - 20, rowY);
+        }
+
+        if (entries.length === 0) {
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.4)';
+            ctx.font = '14px Inter, sans-serif';
+            ctx.fillText('No ranked captains yet.', cx, startRowY + 40);
+            ctx.fillText('Play 5+ games to appear!', cx, startRowY + 62);
+        }
+
+        // Back button
+        const backY = modalY + modalH - (compact ? 30 : 38);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.5)';
+        ctx.font = '13px Inter, sans-serif';
+        ctx.fillText('←  Back to Menu', cx, backY);
+        this._leaderboardBackBounds = { x: cx - 80, y: backY - 12, w: 160, h: 24 };
+    }
+
+    getLeaderboardClick(x, y) {
+        if (!this._leaderboardBackBounds) return null;
+        const b = this._leaderboardBackBounds;
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return 'back';
+        return null;
+    }
 }
+

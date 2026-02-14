@@ -1,4 +1,5 @@
 import { Game } from './game.js';
+import { initSupabase, ensureSession, refreshAuthCache, loadSettings } from './supabase.js';
 import './styles.css';
 
 const canvas = document.getElementById('gameCanvas');
@@ -70,9 +71,21 @@ window.addEventListener('orientationchange', () => {
 
 // Wait for fonts to load before starting the game
 // Loading screen covers the canvas until ready
-document.fonts.ready.then(() => {
+document.fonts.ready.then(async () => {
+    // Init Supabase and create anonymous session
+    initSupabase();
+    await ensureSession();
+    await refreshAuthCache();
+
     const game = new Game(canvas);
     window.game = game;
+
+    // Load cloud-saved settings
+    const saved = await loadSettings();
+    if (saved && typeof saved.sound === 'boolean') {
+        game.audio.enabled = saved.sound;
+    }
+
     game.start();
     resize();
 
@@ -85,3 +98,4 @@ document.fonts.ready.then(() => {
         });
     }
 });
+

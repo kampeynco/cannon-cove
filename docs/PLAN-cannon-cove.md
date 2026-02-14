@@ -20,86 +20,86 @@ Build **Cannon Cove**, a cross-platform artillery game inspired by QBasic Gorill
 
 ### 1.1 Project Scaffold
 
-- [ ] Initialize Vite project with vanilla JS template
-- [ ] Set up file structure per the concept doc (`game.js`, `renderer.js`, `ai.js`, `waves.js`, `audio.js`)
-- [ ] Configure Canvas 2D with DPI-aware scaling and resize listener
-- [ ] Set up Pirata One + Inter fonts (Google Fonts)
-- [ ] Create base CSS with pirate color palette (`#0B1D3A`, `#F4A623`, `#8B5E3C`, `#F5F0E8`)
+- [x] Initialize Vite project with vanilla JS template
+- [x] Set up file structure per the concept doc (`game.js`, `renderer.js`, `ai.js`, `waves.js`, `audio.js`)
+- [x] Configure Canvas 2D with DPI-aware scaling and resize listener
+- [x] Set up Pirata One + Inter fonts (Google Fonts)
+- [x] Create base CSS with pirate color palette (`#0B1D3A`, `#F4A623`, `#8B5E3C`, `#F5F0E8`)
 
 ### 1.2 Rendering Engine (`renderer.js`)
 
-- [ ] Draw ocean background with gradient sky
-- [ ] Procedural wave generation (animated sine waves)
-- [ ] Draw pirate ships (procedural canvas — hull, mast, sails, flag)
-- [ ] Ship bobbing animation (position = `baseY + sin(time * freq) * amp`)
-- [ ] Wind flag indicator (direction + speed visualization)
-- [ ] Dynamic sky cycle (sunset → dusk → night over match duration)
-- [ ] Star field generation for night phase
-- [ ] Cannonball rendering with smoke trail
-- [ ] Splash VFX (water hit) and impact VFX (ship hit)
-- [ ] Ship damage states (3HP → 2HP → 1HP → sinking animation)
-- [ ] Rocky islands / cove scenery decoration
-- [ ] Easter egg: occasional whale breach or kraken tentacle in background
+- [x] Draw ocean background with gradient sky
+- [x] Procedural wave generation (animated sine waves)
+- [x] Draw pirate ships (procedural canvas — hull, mast, sails, flag)
+- [x] Ship bobbing animation (position = `baseY + sin(time * freq) * amp`)
+- [x] Wind flag indicator (direction + speed visualization)
+- [x] Dynamic sky cycle (sunset → dusk → night over match duration)
+- [x] Star field generation for night phase
+- [x] Cannonball rendering with smoke trail
+- [x] Splash VFX (water hit) and impact VFX (ship hit)
+- [x] Ship damage states (3HP → 2HP → 1HP → sinking animation)
+- [x] Rocky islands / cove scenery decoration
+- [x] Easter egg: occasional whale breach or kraken tentacle in background
 
 ### 1.3 Physics & Game Logic (`game.js`)
 
-- [ ] Core game state object (players, turn, wind, round, HP)
-- [ ] Finite State Machine for game flow (`MENU → AIM → FIRE → RESOLVE → SWITCH_TURN → VICTORY`)
-- [ ] Projectile physics (gravity + wind + initial velocity)
-- [ ] Wave offset applied to ship Y positions for collision detection
-- [ ] Collision detection (cannonball vs. ship hull, water, rocks, power-up crates)
-- [ ] Multi-hit health system (3HP per ship)
-- [ ] Wind randomization per round
-- [ ] Turn switching logic
-- [ ] Victory/defeat state with celebration animation
+- [x] Core game state object (players, turn, wind, round, HP)
+- [x] Finite State Machine for game flow (`MENU → AIM → FIRE → RESOLVE → SWITCH_TURN → VICTORY`)
+- [x] Projectile physics (gravity + wind + initial velocity)
+- [x] Wave offset applied to ship Y positions for collision detection
+- [x] Collision detection (cannonball vs. ship hull, water, rocks, power-up crates)
+- [x] Multi-hit health system (3HP per ship)
+- [x] Wind randomization per round
+- [x] Turn switching logic
+- [x] Victory/defeat state with celebration animation
 
 ### 1.4 Input & Controls
 
-- [ ] Mouse/trackpad: drag to set angle + power
-- [ ] Touch controls: same drag gesture for mobile web
-- [ ] Power gauge UI overlay
-- [ ] Angle indicator arc
-- [ ] Fire button
+- [x] Mouse/trackpad: drag to set angle + power
+- [x] Touch controls: same drag gesture for mobile web
+- [x] Power gauge UI overlay
+- [x] Angle indicator arc
+- [x] Fire button
 
 ### 1.5 AI Opponent (`ai.js`)
 
-- [ ] Monte Carlo simulation (N random throws, pick closest to enemy)
-- [ ] Wave phase prediction (account for target ship bobbing)
-- [ ] Progressive difficulty (`2 + round * 3` simulations)
-- [ ] Named AI captains with personality (affects accuracy variance)
+- [x] Monte Carlo simulation (N random throws, pick closest to enemy)
+- [x] Wave phase prediction (account for target ship bobbing)
+- [x] Progressive difficulty (`2 + round * 3` simulations)
+- [x] Named AI captains with personality (affects accuracy variance)
 
 ### 1.6 Power-Ups
 
-- [ ] Floating crate spawning (randomly between ships)
-- [ ] Crate collision detection
-- [ ] 🔴 Chain Shot — double damage on next hit
-- [ ] 🟢 Repair Kit — restore 1 HP
-- [ ] 🔵 Spyglass — show exact trajectory preview for one turn
+- [x] Floating crate spawning (randomly between ships)
+- [x] Crate collision detection
+- [x] 🔴 Chain Shot — double damage on next hit
+- [x] 🟢 Repair Kit — restore 1 HP
+- [x] 🔵 Spyglass — show exact trajectory preview for one turn
 
 ### 1.7 Audio (`audio.js`)
 
-- [ ] Integrate Howler.js for audio management
-- [ ] Cannon fire SFX
-- [ ] Cannonball whoosh (positional)
-- [ ] Water splash SFX
-- [ ] Ship hit / wood cracking SFX
-- [ ] Ambient ocean loop
-- [ ] Victory fanfare
-- [ ] Wind ambient (intensity matches wind speed)
+- [x] Integrate Howler.js for audio management
+- [x] Cannon fire SFX
+- [x] Cannonball whoosh (positional)
+- [x] Water splash SFX
+- [x] Ship hit / wood cracking SFX
+- [x] Ambient ocean loop
+- [x] Victory fanfare
+- [x] Wind ambient (intensity matches wind speed)
 
 ### 1.8 Game Modes
 
-- [ ] ⚔️ Duel — 1v1 vs AI (default)
-- [ ] 🏴‍☠️ Crew Battle — 2-player hot-seat
-- [ ] 👻 Ghost Fleet — AI vs AI autoplay
+- [x] ⚔️ Duel — 1v1 vs AI (default)
+- [x] 🏴‍☠️ Crew Battle — 2-player hot-seat
+- [x] 👻 Ghost Fleet — AI vs AI autoplay
 
 ### 1.9 UI Screens
 
-- [ ] Main menu (title, mode selection, settings)
-- [ ] In-game HUD (HP bars, wind indicator, turn label, round counter)
-- [ ] Settings panel (sound toggle, quality)
-- [ ] Victory / defeat screen with stats
-- [ ] "How to Play" overlay
+- [x] Main menu (title, mode selection, settings)
+- [x] In-game HUD (HP bars, wind indicator, turn label, round counter)
+- [x] Settings panel (sound toggle, quality)
+- [x] Victory / defeat screen with stats
+- [x] "How to Play" overlay
 
 ### ✅ Phase 1 Verification
 
@@ -126,37 +126,37 @@ Build **Cannon Cove**, a cross-platform artillery game inspired by QBasic Gorill
 
 ### 2.1 Supabase Project Setup
 
-- [ ] Create Supabase project
-- [ ] Configure auth providers (Anonymous, Google, Apple, magic link)
-- [ ] Set up environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
+- [x] Create Supabase project
+- [x] Configure auth providers (Anonymous, Google, Apple, magic link)
+- [x] Set up environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
 
 ### 2.2 Database Schema
 
-- [ ] Create `players` table (id, username, avatar_url, total_wins, total_games, accuracy_pct, unlocked_skins)
-- [ ] Create `matches` table (id, player1_id, player2_id, winner_id, rounds, duration_seconds)
-- [ ] Create `leaderboard` materialized view (win_rate, rank)
-- [ ] Set up RLS policies (players can only update own profile, matches insert-only)
-- [ ] Create trigger to auto-update player stats on match insert
+- [x] Create `players` table (id, username, avatar_url, total_wins, total_games, accuracy_pct, unlocked_skins)
+- [x] Create `matches` table (id, player1_id, player2_id, winner_id, rounds, duration_seconds)
+- [x] Create `leaderboard` materialized view (win_rate, rank)
+- [x] Set up RLS policies (players can only update own profile, matches insert-only)
+- [x] Create trigger to auto-update player stats on match insert
 
 ### 2.3 Auth Integration (`supabase.js`)
 
-- [ ] Supabase client initialization
-- [ ] "Play as Guest" → anonymous auth
-- [ ] "Sign In" → OAuth / magic link
-- [ ] Session persistence and token refresh
-- [ ] Guest-to-authenticated migration (transfer stats)
+- [x] Supabase client initialization
+- [x] "Play as Guest" → anonymous auth
+- [x] "Sign In" → OAuth / magic link
+- [x] Session persistence and token refresh
+- [x] Guest-to-authenticated migration (transfer stats)
 
 ### 2.4 Game Integration
 
-- [ ] Save match results to `matches` table on game end
-- [ ] Update player `total_wins`, `total_games`, `accuracy_pct` after each match
-- [ ] Fetch and display leaderboard in UI
-- [ ] Cloud save: persist current game settings per player
+- [x] Save match results to `matches` table on game end
+- [x] Update player `total_wins`, `total_games`, `accuracy_pct` after each match
+- [x] Fetch and display leaderboard in UI
+- [x] Cloud save: persist current game settings per player
 
 ### 2.5 Edge Functions
 
-- [ ] Anti-cheat score validation (verify match duration vs. rounds, reasonable accuracy)
-- [ ] Reward distribution (unlock skins at milestones)
+- [x] Anti-cheat score validation (verify match duration vs. rounds, reasonable accuracy)
+- [x] Reward distribution (unlock skins at milestones)
 
 ### ✅ Phase 2 Verification
 

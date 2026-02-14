@@ -34,6 +34,8 @@ export const STATES = {
     VICTORY: 'VICTORY',
     SETTINGS: 'SETTINGS',
     HOWTOPLAY: 'HOWTOPLAY',
+    SIGNIN: 'SIGNIN',
+    LEADERBOARD: 'LEADERBOARD',
 };
 
 // ─── Game Modes ────────────────────────────────────

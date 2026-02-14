@@ -8,6 +8,7 @@ import { InputManager } from './input.js';
 import { PowerUpSystem } from './powerups.js';
 import { SeaCreatures } from './creatures.js';
 import { UIManager } from './ui.js';
+import { saveMatch, isAuthenticatedSync, signInWithGoogle, signInWithEmail, refreshAuthCache, getLeaderboard, saveSettings, loadSettings } from './supabase.js';
 
 export class Game {
     constructor(canvas) {
@@ -35,6 +36,7 @@ export class Game {
         this.startTime = 0;
         this.htpPage = 0;
         this.htpReturnState = STATES.MENU;
+        this.matchSaved = false;
 
         this.vfx = [];
         this.sinkProgress = null;
@@ -85,9 +87,36 @@ export class Game {
                     this.htpPage = 0;
                     this.htpReturnState = STATES.MENU;
                     this.state = STATES.HOWTOPLAY;
+                } else if (this.ui.isLeaderboardClick && this.ui.isLeaderboardClick(cx, cy)) {
+                    this.audio.playClick();
+                    this.leaderboardData = [];
+                    this.state = STATES.LEADERBOARD;
+                    getLeaderboard().then(data => { this.leaderboardData = data; });
+                }
+                // Sign-in link on main menu (only for guests)
+                if (this.ui.isMenuSignInClick && this.ui.isMenuSignInClick(cx, cy)) {
+                    this.audio.playClick();
+                    this.state = STATES.SIGNIN;
                 }
             } else if (this.state === STATES.VICTORY) {
                 if (this.ui.isPlayAgainClick(cx, cy)) {
+                    this.audio.playClick();
+                    if (!isAuthenticatedSync()) {
+                        this.state = STATES.SIGNIN;
+                    } else {
+                        this.resetGame();
+                    }
+                }
+            } else if (this.state === STATES.SIGNIN) {
+                const action = this.ui.getSignInClick(cx, cy);
+                if (action === 'google') {
+                    this.audio.playClick();
+                    signInWithGoogle();
+                } else if (action === 'email') {
+                    this.audio.playClick();
+                    const email = prompt('Enter your email for a magic link:');
+                    if (email) signInWithEmail(email);
+                } else if (action === 'skip') {
                     this.audio.playClick();
                     this.resetGame();
                 }
@@ -96,6 +125,7 @@ export class Game {
                 if (action === 'sound') {
                     this.audio.toggle();
                     this.audio.playClick();
+                    saveSettings({ sound: this.audio.enabled });
                 } else if (action === 'exit') {
                     this.audio.playClick();
                     this.resetGame();
@@ -119,6 +149,12 @@ export class Game {
                 } else if (action === 'prev') {
                     this.audio.playClick();
                     this.htpPage = Math.max(0, this.htpPage - 1);
+                }
+            } else if (this.state === STATES.LEADERBOARD) {
+                const action = this.ui.getLeaderboardClick(cx, cy);
+                if (action === 'back') {
+                    this.audio.playClick();
+                    this.state = STATES.MENU;
                 }
             } else if (this.state === STATES.AIM && !this.isCurrentPlayerAI()) {
                 // Fire button tap detection
@@ -217,6 +253,29 @@ export class Game {
         this.projectile.active = false;
         this.vfx = [];
         this.creatures.reset();
+        this.matchSaved = false;
+    }
+
+    async _saveMatchResult() {
+        if (this.matchSaved) return;
+        this.matchSaved = true;
+
+        const winner = this.players.find(p => p.hp > 0);
+        const playerWon = winner === this.players[0];
+        const elapsed = Math.floor((this.endTime - this.startTime) / 1000);
+        const accuracy = this.totalShots[0]
+            ? Math.round((this.totalHits[0] / this.totalShots[0]) * 100)
+            : 0;
+
+        await saveMatch({
+            won: playerWon,
+            rounds: this.round,
+            accuracy,
+            durationSeconds: elapsed,
+            mode: { DUEL: 'duel', CREW_BATTLE: 'crew', GHOST_FLEET: 'ghost' }[this.mode] || 'duel',
+            opponentType: this.mode === MODES.CREW_BATTLE ? 'human' : 'ai',
+        });
+        await refreshAuthCache();
     }
 
     handleFire(angle, power) {
@@ -272,6 +331,7 @@ export class Game {
                 this.endTime = performance.now();
                 this.sinkProgress = { ship: target, progress: 0 };
                 this.audio.playVictory();
+                this._saveMatchResult();
                 return;
             }
         } else if (result.type === 'splash') {
@@ -447,6 +507,10 @@ export class Game {
                 accuracy,
                 time: `${mins}:${secs.toString().padStart(2, '0')}`,
             });
+        } else if (this.state === STATES.SIGNIN) {
+            this.ui.drawSignInPrompt();
+        } else if (this.state === STATES.LEADERBOARD) {
+            this.ui.drawLeaderboard(this.leaderboardData || []);
         } else if (this.state === STATES.SETTINGS) {
             this.ui.drawSettings({ sound: this.audio.enabled });
         } else if (this.state === STATES.HOWTOPLAY) {
