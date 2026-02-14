@@ -743,38 +743,7 @@ export class Renderer {
             ? -angle * (Math.PI / 180)
             : -(Math.PI - angle * (Math.PI / 180));
 
-        // ── Degree tick marks at 15° intervals ──
-        const tickAngles = [0, 15, 30, 45, 60, 75, 90];
-        tickAngles.forEach((deg) => {
-            const rad = facingRight
-                ? -deg * (Math.PI / 180)
-                : -(Math.PI - deg * (Math.PI / 180));
-            const tickLen = deg % 45 === 0 ? 14 : 8;
-            const innerR = 28;
 
-            const tx1 = ox + Math.cos(rad) * innerR;
-            const ty1 = oy + Math.sin(rad) * innerR;
-            const tx2 = ox + Math.cos(rad) * (innerR + tickLen);
-            const ty2 = oy + Math.sin(rad) * (innerR + tickLen);
-
-            ctx.strokeStyle = 'rgba(245, 240, 232, 0.25)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(tx1, ty1);
-            ctx.lineTo(tx2, ty2);
-            ctx.stroke();
-
-            // Label major ticks
-            if (deg % 30 === 0) {
-                const lx = ox + Math.cos(rad) * (innerR + tickLen + 10);
-                const ly = oy + Math.sin(rad) * (innerR + tickLen + 10);
-                ctx.fillStyle = 'rgba(245, 240, 232, 0.3)';
-                ctx.font = '9px Inter, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(`${deg}°`, lx, ly);
-            }
-        });
 
         // ── Dotted aim line from cannon ──
         const lineLength = 60 + (power / PHYSICS.maxPower) * 60;

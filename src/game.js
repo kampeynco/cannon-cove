@@ -33,6 +33,8 @@ export class Game {
         this.totalShots = [0, 0];
         this.totalHits = [0, 0];
         this.startTime = 0;
+        this.htpPage = 0;
+        this.htpReturnState = STATES.MENU;
 
         this.vfx = [];
         this.sinkProgress = null;
@@ -78,6 +80,11 @@ export class Game {
                     this.audio.unlock();
                     this.audio.playClick();
                     this.startGame(mode);
+                } else if (this.ui.isHowToPlayClick(cx, cy)) {
+                    this.audio.playClick();
+                    this.htpPage = 0;
+                    this.htpReturnState = STATES.MENU;
+                    this.state = STATES.HOWTOPLAY;
                 }
             } else if (this.state === STATES.VICTORY) {
                 if (this.ui.isPlayAgainClick(cx, cy)) {
@@ -95,6 +102,23 @@ export class Game {
                 } else if (action === 'resume') {
                     this.audio.playClick();
                     this.state = this._previousState || STATES.AIM;
+                } else if (action === 'howtoplay') {
+                    this.audio.playClick();
+                    this.htpPage = 0;
+                    this.htpReturnState = STATES.SETTINGS;
+                    this.state = STATES.HOWTOPLAY;
+                }
+            } else if (this.state === STATES.HOWTOPLAY) {
+                const action = this.ui.getHowToPlayClick(cx, cy);
+                if (action === 'back') {
+                    this.audio.playClick();
+                    this.state = this.htpReturnState;
+                } else if (action === 'next') {
+                    this.audio.playClick();
+                    this.htpPage++;
+                } else if (action === 'prev') {
+                    this.audio.playClick();
+                    this.htpPage = Math.max(0, this.htpPage - 1);
                 }
             } else if (this.state === STATES.AIM && !this.isCurrentPlayerAI()) {
                 // Fire button tap detection
@@ -140,6 +164,8 @@ export class Game {
                     this.state = STATES.SETTINGS;
                 } else if (this.state === STATES.SETTINGS) {
                     this.state = this._previousState || STATES.AIM;
+                } else if (this.state === STATES.HOWTOPLAY) {
+                    this.state = this.htpReturnState;
                 }
             }
         });
@@ -415,6 +441,8 @@ export class Game {
             });
         } else if (this.state === STATES.SETTINGS) {
             this.ui.drawSettings({ sound: this.audio.enabled });
+        } else if (this.state === STATES.HOWTOPLAY) {
+            this.ui.drawHowToPlay(this.htpPage);
         } else {
             // In-game HUD
             renderer.drawHUD({

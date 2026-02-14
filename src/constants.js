@@ -33,6 +33,7 @@ export const STATES = {
     SWITCH_TURN: 'SWITCH_TURN',
     VICTORY: 'VICTORY',
     SETTINGS: 'SETTINGS',
+    HOWTOPLAY: 'HOWTOPLAY',
 };
 
 // ─── Game Modes ────────────────────────────────────

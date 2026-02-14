@@ -94,19 +94,38 @@ export class UIManager {
             ctx.fillText(btn.subtitle, cx, subY);
         });
 
+        // How to Play button
+        const htpW = compact ? 140 : 160;
+        const htpH = compact ? 30 : 36;
+        const htpY = startY + this.menuButtons.length * (btnHeight + btnGap) + (compact ? 8 : 16);
+        this.howToPlayBounds = { x: cx - htpW / 2, y: htpY, w: htpW, h: htpH };
+
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
+        this.drawRoundedRect(this.howToPlayBounds.x, htpY, htpW, htpH, 6);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(245, 240, 232, 0.25)';
+        ctx.lineWidth = 1;
+        this.drawRoundedRect(this.howToPlayBounds.x, htpY, htpW, htpH, 6);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.7)';
+        ctx.font = `${compact ? 12 : 14}px Inter, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('📖  How to Play', cx, htpY + htpH / 2);
+
         // Footer
         if (!compact) {
-            ctx.fillStyle = 'rgba(245, 240, 232, 0.5)';
-            ctx.font = '13px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('Drag to aim • Release to fire', cx, h - 40);
-            ctx.fillText('🔊 Sound On', cx, h - 20);
-        } else {
-            ctx.fillStyle = 'rgba(245, 240, 232, 0.4)';
-            ctx.font = '11px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('Drag to aim • Release to fire  |  🔊 Sound On', cx, h - 10);
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.35)';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.fillText('Drag to aim • Release to fire', cx, h - 20);
         }
+    }
+
+    isHowToPlayClick(x, y) {
+        if (!this.howToPlayBounds) return false;
+        const b = this.howToPlayBounds;
+        return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
     }
 
     drawVictory(winner, stats) {
@@ -249,6 +268,7 @@ export class UIManager {
 
         const buttons = [
             { id: 'sound', label: `🔊 Sound: ${settings.sound ? 'ON' : 'OFF'}` },
+            { id: 'howtoplay', label: '📖  How to Play' },
             { id: 'exit', label: '🚪 Exit to Menu' },
             { id: 'resume', label: '▶️  Resume Game' },
         ];
@@ -260,12 +280,13 @@ export class UIManager {
             // Button background
             const isResume = btn.id === 'resume';
             const isExit = btn.id === 'exit';
-            ctx.fillStyle = isResume ? COLORS.sunsetGold : isExit ? '#8B2020' : COLORS.warmBrown;
+            const isHtp = btn.id === 'howtoplay';
+            ctx.fillStyle = isResume ? COLORS.sunsetGold : isExit ? '#8B2020' : isHtp ? '#1A3A5C' : COLORS.warmBrown;
             this.drawRoundedRect(bounds.x, bounds.y, btnWidth, btnHeight, 8);
             ctx.fill();
 
             // Button border
-            ctx.strokeStyle = isResume ? '#D4941E' : isExit ? '#5C1010' : '#6B4226';
+            ctx.strokeStyle = isResume ? '#D4941E' : isExit ? '#5C1010' : isHtp ? '#0F2840' : '#6B4226';
             ctx.lineWidth = 2;
             this.drawRoundedRect(bounds.x, bounds.y, btnWidth, btnHeight, 8);
             ctx.stroke();
@@ -333,6 +354,212 @@ export class UIManager {
         if (!this.playAgainBounds) return false;
         const b = this.playAgainBounds;
         return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+    }
+
+    drawHowToPlay(page = 0) {
+        const { ctx, canvas } = this;
+        const cx = canvas.width / 2;
+        const h = canvas.height;
+        const compact = h < 450;
+        const margin = compact ? 20 : 40;
+        const contentW = Math.min(canvas.width - margin * 2, 600);
+        const leftX = cx - contentW / 2;
+
+        ctx.fillStyle = 'rgba(5, 13, 26, 0.96)';
+        ctx.fillRect(0, 0, canvas.width, h);
+
+        const titleY = compact ? 24 : 40;
+        ctx.fillStyle = COLORS.sunsetGold;
+        ctx.font = `bold ${compact ? 24 : 32}px "Pirata One", Georgia, serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('📖 How to Play', cx, titleY);
+
+        ctx.strokeStyle = 'rgba(244, 166, 35, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(leftX, titleY + 20);
+        ctx.lineTo(leftX + contentW, titleY + 20);
+        ctx.stroke();
+
+        const pages = this._getHelpPages();
+        const currentPage = pages[Math.min(page, pages.length - 1)];
+        let y = titleY + (compact ? 30 : 44);
+
+        for (const section of currentPage) {
+            ctx.fillStyle = COLORS.sunsetGold;
+            ctx.font = `bold ${compact ? 13 : 16}px Inter, sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText(section.title, leftX, y);
+            y += compact ? 16 : 22;
+
+            ctx.fillStyle = COLORS.sailCream;
+            ctx.font = `${compact ? 11 : 13}px Inter, sans-serif`;
+            for (const item of section.items) {
+                const lines = this._wrapText(item, contentW - 16, ctx);
+                for (const line of lines) {
+                    ctx.fillText(line, leftX + 8, y);
+                    y += compact ? 14 : 17;
+                }
+                y += 2;
+            }
+            y += compact ? 6 : 12;
+        }
+
+        // Page indicator
+        if (pages.length > 1) {
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.4)';
+            ctx.font = `${compact ? 11 : 13}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`Page ${page + 1} of ${pages.length}`, cx, h - (compact ? 48 : 62));
+        }
+
+        // Nav buttons
+        const navY = h - (compact ? 36 : 46);
+        const btnW = compact ? 90 : 110;
+        const btnH = compact ? 28 : 34;
+
+        this.htpBackBounds = { x: cx - btnW / 2, y: navY, w: btnW, h: btnH };
+        this.htpNextBounds = null;
+        this.htpPrevBounds = null;
+
+        if (pages.length > 1) {
+            this.htpBackBounds.x = cx - btnW / 2;
+            if (page > 0) {
+                this.htpPrevBounds = { x: cx - btnW * 1.7, y: navY, w: btnW, h: btnH };
+                ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
+                this.drawRoundedRect(this.htpPrevBounds.x, navY, btnW, btnH, 6);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(245, 240, 232, 0.25)';
+                ctx.lineWidth = 1;
+                this.drawRoundedRect(this.htpPrevBounds.x, navY, btnW, btnH, 6);
+                ctx.stroke();
+                ctx.fillStyle = COLORS.sailCream;
+                ctx.font = `bold ${compact ? 12 : 14}px Inter, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('← Prev', this.htpPrevBounds.x + btnW / 2, navY + btnH / 2);
+            }
+            if (page < pages.length - 1) {
+                this.htpNextBounds = { x: cx + btnW * 0.7, y: navY, w: btnW, h: btnH };
+                ctx.fillStyle = COLORS.sunsetGold;
+                this.drawRoundedRect(this.htpNextBounds.x, navY, btnW, btnH, 6);
+                ctx.fill();
+                ctx.fillStyle = COLORS.deepOcean;
+                ctx.font = `bold ${compact ? 12 : 14}px Inter, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Next →', this.htpNextBounds.x + btnW / 2, navY + btnH / 2);
+            }
+        }
+
+        // Back button
+        ctx.fillStyle = COLORS.warmBrown;
+        this.drawRoundedRect(this.htpBackBounds.x, navY, btnW, btnH, 6);
+        ctx.fill();
+        ctx.fillStyle = COLORS.sailCream;
+        ctx.font = `bold ${compact ? 12 : 14}px Inter, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('← Back', this.htpBackBounds.x + btnW / 2, navY + btnH / 2);
+    }
+
+    _getHelpPages() {
+        return [
+            [
+                {
+                    title: '🎯 Controls',
+                    items: [
+                        '• Drag on the screen to aim your cannon — direction sets the angle, distance sets the power.',
+                        '• Release to fire your cannonball at the enemy ship.',
+                        '• Tap the FIRE button to launch when ready.',
+                        '• Press ESC to open the pause menu at any time.',
+                    ],
+                },
+                {
+                    title: '🎮 Game Modes',
+                    items: [
+                        '⚔️ Duel — Challenge the AI captain in a 1v1 artillery battle.',
+                        '🏴‍☠️ Crew Battle — Play with a friend on the same device.',
+                        '👻 Ghost Fleet — Watch two AI captains battle it out.',
+                    ],
+                },
+                {
+                    title: '💨 Wind',
+                    items: [
+                        '• Wind pushes your cannonball left or right during flight.',
+                        '• Check the indicator at the top — arrows show direction, number shows strength.',
+                        '• Adjust your aim to compensate! Wind changes each round.',
+                    ],
+                },
+            ],
+            [
+                {
+                    title: '🎁 Power-Ups',
+                    items: [
+                        '• Floating crates appear on the water between ships.',
+                        '• Hit a crate with your cannonball to collect its power-up.',
+                        '🔥 Fire Shot — Deals double damage to the enemy ship.',
+                        '🛡️ Shield — Blocks the next incoming hit.',
+                        '🌊 Tidal Wave — Shifts the wind dramatically.',
+                    ],
+                },
+                {
+                    title: '💡 Strategy Tips',
+                    items: [
+                        '• Start with ~45° angle for maximum range, then adjust.',
+                        '• Strong wind can carry your shot off course — compensate!',
+                        '• Aim for power-up crates — they can turn the tide of battle.',
+                        '• Ships tilt and catch fire as they take damage.',
+                        '• Each ship has 4 HP shown as flags at the top.',
+                    ],
+                },
+                {
+                    title: '📊 HUD Guide',
+                    items: [
+                        '• Top corners: Player health (🏴‍☠️ = alive, ☠️ = lost).',
+                        '• Top center: Round number and wind speed/direction.',
+                        '• Bottom center: FIRE button (during your turn).',
+                        '• Bottom right: ESC = Pause reminder.',
+                    ],
+                },
+            ],
+        ];
+    }
+
+    _wrapText(text, maxWidth, ctx) {
+        const words = text.split(' ');
+        const lines = [];
+        let current = '';
+        for (const word of words) {
+            const test = current ? `${current} ${word}` : word;
+            if (ctx.measureText(test).width > maxWidth && current) {
+                lines.push(current);
+                current = word;
+            } else {
+                current = test;
+            }
+        }
+        if (current) lines.push(current);
+        return lines;
+    }
+
+    getHowToPlayClick(x, y) {
+        if (this.htpBackBounds) {
+            const b = this.htpBackBounds;
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return 'back';
+        }
+        if (this.htpNextBounds) {
+            const b = this.htpNextBounds;
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return 'next';
+        }
+        if (this.htpPrevBounds) {
+            const b = this.htpPrevBounds;
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return 'prev';
+        }
+        return null;
     }
 
     drawRoundedRect(x, y, w, h, r) {
