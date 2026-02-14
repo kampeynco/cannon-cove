@@ -301,6 +301,14 @@ export class Game {
                 this.canvas.width, this.waves.waterLevel,
                 this.players[0].x, this.players[1].x
             );
+            // Play creature sound when one surfaces
+            if (this.creatures.creature && this.creatures.creature.phase === 1) {
+                if (this.creatures.creature.type === 'WHALE') {
+                    this.audio.playWhaleCall();
+                } else {
+                    this.audio.playKrakenRise();
+                }
+            }
 
             this.state = STATES.AIM;
             this.input.reset();
