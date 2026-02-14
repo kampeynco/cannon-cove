@@ -364,203 +364,160 @@ export class UIManager {
     drawHowToPlay(page = 0) {
         const { ctx, canvas } = this;
         const cx = canvas.width / 2;
+        const w = canvas.width;
         const h = canvas.height;
         const compact = h < 450;
+        const tiny = h < 340;
 
         // Full overlay
         ctx.fillStyle = 'rgba(5, 13, 26, 0.97)';
-        ctx.fillRect(0, 0, canvas.width, h);
+        ctx.fillRect(0, 0, w, h);
 
         // Title
-        const titleY = compact ? 22 : 38;
+        const titleSize = tiny ? 20 : compact ? 26 : 36;
+        const titleY = tiny ? 16 : compact ? 22 : 38;
         ctx.fillStyle = COLORS.sunsetGold;
-        ctx.font = `bold ${compact ? 26 : 36}px "Pirata One", Georgia, serif`;
+        ctx.font = `bold ${titleSize}px "Pirata One", Georgia, serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('How to Play', cx, titleY);
 
-        // Cards data
-        const pages = this._getHelpCards();
-        const cards = pages[Math.min(page, pages.length - 1)];
+        // Layout: 1 column on mobile, 2 on desktop/tablet
+        const cols = compact ? 1 : 2;
+        const cardGap = tiny ? 5 : compact ? 7 : 12;
+        const cardH = tiny ? 64 : compact ? 76 : 120;
+        const navAreaH = tiny ? 36 : compact ? 42 : 52;
+        const cardStartY = titleY + (tiny ? 16 : compact ? 24 : 44);
+        const availH = h - cardStartY - navAreaH - 6;
+        const rowsPerPage = Math.max(1, Math.floor((availH + cardGap) / (cardH + cardGap)));
+        const cardsPerPage = rowsPerPage * cols;
 
-        // Card layout
-        const cols = compact ? 2 : (canvas.width > 700 ? 3 : 2);
-        const cardGap = compact ? 8 : 14;
-        const maxCardW = compact ? 200 : 240;
-        const totalW = cols * maxCardW + (cols - 1) * cardGap;
-        const gridLeft = cx - totalW / 2;
-        const cardStartY = titleY + (compact ? 28 : 50);
-        const cardH = compact ? 100 : 130;
+        const margin = tiny ? 14 : compact ? 20 : 40;
+        const maxGridW = Math.min(w - margin * 2, compact ? 400 : 640);
+        const cardW = cols === 1 ? maxGridW : (maxGridW - cardGap) / 2;
+        const gridLeft = cx - maxGridW / 2;
+
+        // Paginate from flat card list
+        const allCards = this._getAllCards();
+        const totalPages = Math.ceil(allCards.length / cardsPerPage);
+        const safePage = Math.min(page, totalPages - 1);
+        const pageCards = allCards.slice(safePage * cardsPerPage, safePage * cardsPerPage + cardsPerPage);
 
         this.htpNextBounds = null;
         this.htpPrevBounds = null;
+        this._htpTotalPages = totalPages;
 
-        cards.forEach((card, i) => {
+        pageCards.forEach((card, i) => {
             const col = i % cols;
             const row = Math.floor(i / cols);
-            const cardX = gridLeft + col * (maxCardW + cardGap);
+            const cardX = gridLeft + col * (cardW + cardGap);
             const cardY = cardStartY + row * (cardH + cardGap);
 
-            // Card background
             ctx.fillStyle = 'rgba(245, 240, 232, 0.05)';
-            this.drawRoundedRect(cardX, cardY, maxCardW, cardH, 10);
+            this.drawRoundedRect(cardX, cardY, cardW, cardH, 10);
             ctx.fill();
 
-            // Accent bar on left
             ctx.fillStyle = card.accent;
             this.drawRoundedRect(cardX, cardY, 4, cardH, 2);
             ctx.fill();
 
-            // Large emoji icon
-            ctx.font = `${compact ? 24 : 32}px serif`;
+            const iconSize = tiny ? 16 : compact ? 20 : 28;
+            const iconX = cardX + (tiny ? 14 : compact ? 18 : 24);
+            const iconY = cardY + (tiny ? 14 : compact ? 18 : 24);
+            ctx.font = `${iconSize}px serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(card.icon, cardX + (compact ? 22 : 28), cardY + (compact ? 24 : 30));
+            ctx.fillText(card.icon, iconX, iconY);
 
-            // Card title
             ctx.fillStyle = COLORS.sunsetGold;
-            ctx.font = `bold ${compact ? 13 : 16}px Inter, sans-serif`;
+            ctx.font = `bold ${tiny ? 11 : compact ? 13 : 15}px Inter, sans-serif`;
             ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.fillText(card.title, cardX + (compact ? 42 : 54), cardY + (compact ? 10 : 14));
+            ctx.textBaseline = 'middle';
+            ctx.fillText(card.title, iconX + iconSize / 2 + 6, iconY);
 
-            // Card description (wrapped)
-            ctx.fillStyle = 'rgba(245, 240, 232, 0.8)';
-            ctx.font = `${compact ? 10.5 : 13}px Inter, sans-serif`;
-            const descX = cardX + (compact ? 12 : 16);
-            const descW = maxCardW - (compact ? 24 : 32);
-            let descY = cardY + (compact ? 42 : 50);
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.78)';
+            const descFont = tiny ? 9.5 : compact ? 11 : 13;
+            ctx.font = `${descFont}px Inter, sans-serif`;
+            ctx.textBaseline = 'top';
+            const descX = cardX + (tiny ? 10 : compact ? 12 : 16);
+            const descW = cardW - (tiny ? 20 : compact ? 24 : 32);
+            let descY = iconY + iconSize / 2 + (tiny ? 3 : compact ? 5 : 8);
             const lines = this._wrapText(card.desc, descW, ctx);
             for (const line of lines) {
+                if (descY + descFont > cardY + cardH - 3) break;
                 ctx.fillText(line, descX, descY);
-                descY += compact ? 13 : 16;
+                descY += tiny ? 11 : compact ? 13 : 16;
             }
         });
 
+        // Navigation bar
+        const navY = h - navAreaH;
+        const btnW = tiny ? 60 : compact ? 72 : 100;
+        const btnH = tiny ? 24 : compact ? 28 : 34;
+        const btnFont = tiny ? 10 : compact ? 12 : 14;
+
         // Page indicator
-        if (pages.length > 1) {
-            ctx.fillStyle = 'rgba(245, 240, 232, 0.4)';
-            ctx.font = `${compact ? 12 : 14}px Inter, sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(`${page + 1} / ${pages.length}`, cx, h - (compact ? 48 : 58));
-
-            // Next / Prev buttons
-            const navY = h - (compact ? 36 : 46);
-            const btnW = compact ? 80 : 100;
-            const btnH = compact ? 28 : 34;
-
-            if (page > 0) {
-                this.htpPrevBounds = { x: cx - btnW - 60, y: navY, w: btnW, h: btnH };
-                ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
-                this.drawRoundedRect(this.htpPrevBounds.x, navY, btnW, btnH, 6);
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(245, 240, 232, 0.2)';
-                ctx.lineWidth = 1;
-                this.drawRoundedRect(this.htpPrevBounds.x, navY, btnW, btnH, 6);
-                ctx.stroke();
-                ctx.fillStyle = COLORS.sailCream;
-                ctx.font = `bold ${compact ? 12 : 14}px Inter, sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('← Prev', this.htpPrevBounds.x + btnW / 2, navY + btnH / 2);
-            }
-
-            if (page < pages.length - 1) {
-                this.htpNextBounds = { x: cx + 60, y: navY, w: btnW, h: btnH };
-                ctx.fillStyle = COLORS.sunsetGold;
-                this.drawRoundedRect(this.htpNextBounds.x, navY, btnW, btnH, 6);
-                ctx.fill();
-                ctx.fillStyle = COLORS.deepOcean;
-                ctx.font = `bold ${compact ? 12 : 14}px Inter, sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('Next →', this.htpNextBounds.x + btnW / 2, navY + btnH / 2);
-            }
-        }
-
-        // Back button (always)
-        const backY = h - (compact ? 36 : 46);
-        const backW = compact ? 80 : 100;
-        const backH = compact ? 28 : 34;
-        this.htpBackBounds = { x: cx - backW / 2, y: backY, w: backW, h: backH };
-
-        ctx.fillStyle = COLORS.warmBrown;
-        this.drawRoundedRect(this.htpBackBounds.x, backY, backW, backH, 6);
-        ctx.fill();
-        ctx.fillStyle = COLORS.sailCream;
-        ctx.font = `bold ${compact ? 12 : 14}px Inter, sans-serif`;
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.35)';
+        ctx.font = `${tiny ? 9 : compact ? 10 : 12}px Inter, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('← Back', this.htpBackBounds.x + backW / 2, backY + backH / 2);
+        ctx.fillText(`${safePage + 1} / ${totalPages}`, cx, navY + btnH / 2);
+
+        if (safePage > 0) {
+            this.htpPrevBounds = { x: cx - btnW - 40, y: navY, w: btnW, h: btnH };
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
+            this.drawRoundedRect(this.htpPrevBounds.x, navY, btnW, btnH, 6);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(245, 240, 232, 0.2)';
+            ctx.lineWidth = 1;
+            this.drawRoundedRect(this.htpPrevBounds.x, navY, btnW, btnH, 6);
+            ctx.stroke();
+            ctx.fillStyle = COLORS.sailCream;
+            ctx.font = `bold ${btnFont}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('← Prev', this.htpPrevBounds.x + btnW / 2, navY + btnH / 2);
+        }
+
+        if (safePage < totalPages - 1) {
+            this.htpNextBounds = { x: cx + 40, y: navY, w: btnW, h: btnH };
+            ctx.fillStyle = COLORS.sunsetGold;
+            this.drawRoundedRect(this.htpNextBounds.x, navY, btnW, btnH, 6);
+            ctx.fill();
+            ctx.fillStyle = COLORS.deepOcean;
+            ctx.font = `bold ${btnFont}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Next →', this.htpNextBounds.x + btnW / 2, navY + btnH / 2);
+        }
+
+        // Back button (bottom-left)
+        const backW = tiny ? 56 : compact ? 66 : 86;
+        this.htpBackBounds = { x: 14, y: navY, w: backW, h: btnH };
+        ctx.fillStyle = COLORS.warmBrown;
+        this.drawRoundedRect(this.htpBackBounds.x, navY, backW, btnH, 6);
+        ctx.fill();
+        ctx.fillStyle = COLORS.sailCream;
+        ctx.font = `bold ${btnFont}px Inter, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('← Back', this.htpBackBounds.x + backW / 2, navY + btnH / 2);
     }
 
-    _getHelpCards() {
+    _getAllCards() {
         return [
-            [
-                {
-                    icon: '🎯', title: 'Aim & Fire',
-                    desc: 'Drag anywhere on screen to aim your cannon. The direction sets your angle and the drag distance sets power. Release or tap FIRE to launch!',
-                    accent: '#F4A623',
-                },
-                {
-                    icon: '💨', title: 'Wind',
-                    desc: 'Wind pushes your cannonball mid-flight. Check the arrow and number at the top of the screen, then adjust your aim to compensate.',
-                    accent: '#5BA4E6',
-                },
-                {
-                    icon: '⚔️', title: 'Duel Mode',
-                    desc: 'Challenge an AI captain in a 1-on-1 artillery battle. Outsmart and outshoot your opponent to sink their ship!',
-                    accent: '#E74C3C',
-                },
-                {
-                    icon: '🏴‍☠️', title: 'Crew Battle',
-                    desc: 'Grab a friend! Two players take turns on the same device. Perfect for quick head-to-head pirate duels.',
-                    accent: '#2ECC71',
-                },
-                {
-                    icon: '👻', title: 'Ghost Fleet',
-                    desc: 'Sit back and watch two AI captains battle it out. Great for learning strategy by observing.',
-                    accent: '#9B59B6',
-                },
-                {
-                    icon: '⏸️', title: 'Pause',
-                    desc: 'Press ESC anytime during gameplay to pause. From there you can toggle sound, exit to menu, or view this guide.',
-                    accent: '#95A5A6',
-                },
-            ],
-            [
-                {
-                    icon: '🔥', title: 'Fire Shot',
-                    desc: 'Hit a floating crate to grab this power-up. Your next cannonball deals double damage — devastating!',
-                    accent: '#E67E22',
-                },
-                {
-                    icon: '🛡️', title: 'Shield',
-                    desc: 'Activates a protective barrier around your ship. The next incoming hit is completely blocked.',
-                    accent: '#3498DB',
-                },
-                {
-                    icon: '🌊', title: 'Tidal Wave',
-                    desc: 'Dramatically shifts the wind direction and strength. Can throw off your opponent\'s careful aim!',
-                    accent: '#1ABC9C',
-                },
-                {
-                    icon: '🏴‍☠️', title: 'Health Flags',
-                    desc: 'Each ship has 4 HP shown as flags at the top corners. Pirate flags mean health remaining, skulls mean damage taken.',
-                    accent: '#E74C3C',
-                },
-                {
-                    icon: '🔥', title: 'Damage Effects',
-                    desc: 'As ships take hits, they show holes, start tilting, emit smoke at 2 HP, and catch fire at 1 HP. Watch for the flames!',
-                    accent: '#F39C12',
-                },
-                {
-                    icon: '💡', title: 'Pro Tip',
-                    desc: 'Start at ~45° for max range. Aim for floating crates when they appear — power-ups can completely turn the tide of battle!',
-                    accent: '#F1C40F',
-                },
-            ],
+            { icon: '🎯', title: 'Aim & Fire', desc: 'Drag on screen to aim your cannon. Direction sets angle, drag distance sets power. Release or tap FIRE to launch!', accent: '#F4A623' },
+            { icon: '💨', title: 'Wind', desc: 'Wind pushes your cannonball mid-flight. Check the arrow at the top of the screen, then adjust your aim.', accent: '#5BA4E6' },
+            { icon: '⚔️', title: 'Duel Mode', desc: 'Challenge an AI captain in a 1-on-1 artillery battle. Outsmart your opponent to sink their ship!', accent: '#E74C3C' },
+            { icon: '🏴‍☠️', title: 'Crew Battle', desc: 'Grab a friend! Two players take turns on the same device for head-to-head pirate duels.', accent: '#2ECC71' },
+            { icon: '👻', title: 'Ghost Fleet', desc: 'Sit back and watch two AI captains battle it out. Great for learning strategy.', accent: '#9B59B6' },
+            { icon: '⏸️', title: 'Pause', desc: 'Press ESC anytime to pause. Toggle sound, exit to menu, or view this guide.', accent: '#95A5A6' },
+            { icon: '🔥', title: 'Fire Shot', desc: 'Hit a floating crate to grab this power-up. Your next cannonball deals double damage!', accent: '#E67E22' },
+            { icon: '🛡️', title: 'Shield', desc: 'Activates a barrier around your ship. The next incoming hit is completely blocked.', accent: '#3498DB' },
+            { icon: '🌊', title: 'Tidal Wave', desc: 'Dramatically shifts the wind direction and strength. Throws off your opponent\'s aim!', accent: '#1ABC9C' },
+            { icon: '🏴‍☠️', title: 'Health Flags', desc: 'Each ship has 4 HP shown as flags at the top corners. Pirate flags = health, skulls = damage.', accent: '#E74C3C' },
+            { icon: '💥', title: 'Damage Effects', desc: 'Ships show holes, tilt, emit smoke at 2 HP, and catch fire at 1 HP. Watch for the flames!', accent: '#F39C12' },
+            { icon: '💡', title: 'Pro Tip', desc: 'Start at ~45° for max range. Grab floating crates — power-ups can turn the tide of battle!', accent: '#F1C40F' },
         ];
     }
 
