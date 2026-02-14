@@ -21,7 +21,11 @@ function resize() {
 // Uses actual pixel dimensions instead of CSS orientation query
 // which is unreliable on many Android browsers
 function isMobileDevice() {
-    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // Require coarse pointer (finger) — excludes desktops/laptops with trackpads
+    const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // Must have both touch AND coarse pointer to be considered mobile
+    return hasCoarsePointer && hasTouchScreen;
 }
 
 function checkOrientation() {
@@ -45,6 +49,13 @@ function checkOrientation() {
 
 resize();
 checkOrientation();
+
+// On desktop/tablet, immediately hide the loading screen
+// (only show the splash for mobile devices)
+if (!isMobileDevice() || window.innerWidth >= 768) {
+    const ls = document.getElementById('loadingScreen');
+    if (ls) ls.style.display = 'none';
+}
 
 window.addEventListener('resize', () => {
     resize();

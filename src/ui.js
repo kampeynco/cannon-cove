@@ -94,76 +94,149 @@ export class UIManager {
             const subY = tiny ? by + btnHeight * 0.72 : compact ? by + btnHeight * 0.75 : by + btnHeight * 0.72;
             ctx.fillText(btn.subtitle, cx, subY);
         });
+        // Desktop: top-right nav bar for secondary links
+        const isDesktop = canvas.width >= 700;
 
-        // How to Play button
-        const htpW = tiny ? 120 : compact ? 140 : 160;
-        const htpY = startY + this.menuButtons.length * (btnHeight + btnGap) + htpGap;
-        this.howToPlayBounds = { x: cx - htpW / 2, y: htpY, w: htpW, h: htpH };
+        if (isDesktop) {
+            // Top-right navigation bar
+            const navY = 30;
+            const navFontSize = 14;
+            ctx.font = `${navFontSize}px Inter, sans-serif`;
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'right';
 
-        ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
-        this.drawRoundedRect(this.howToPlayBounds.x, htpY, htpW, htpH, 6);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(245, 240, 232, 0.25)';
-        ctx.lineWidth = 1;
-        this.drawRoundedRect(this.howToPlayBounds.x, htpY, htpW, htpH, 6);
-        ctx.stroke();
+            const navItems = [];
+            const navPadding = 28;
+            let cursorX = canvas.width - 30;
 
-        ctx.fillStyle = 'rgba(245, 240, 232, 0.7)';
-        ctx.font = `${tiny ? 10 : compact ? 12 : 14}px Inter, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('📖  How to Play', cx, htpY + htpH / 2);
+            // Sign-in / Username + Sign-out (rightmost)
+            if (isAuthenticatedSync()) {
+                // Sign Out link
+                const soText = 'Sign Out';
+                const soW = ctx.measureText(soText).width + 16;
+                this._menuSignOutBounds = { x: cursorX - soW, y: navY - 12, w: soW, h: 24 };
+                ctx.fillStyle = 'rgba(245, 240, 232, 0.45)';
+                ctx.fillText(soText, cursorX, navY);
+                cursorX -= soW + navPadding;
 
-        // Leaderboard button
-        const lbY = htpY + htpH + (tiny ? 6 : 8);
-        this._leaderboardBounds = { x: cx - htpW / 2, y: lbY, w: htpW, h: htpH };
+                // Username
+                const name = getCachedUsername() || 'Captain';
+                const nameText = `⚓ ${name}`;
+                const nameW = ctx.measureText(nameText).width + 16;
+                this._menuUsernameBounds = { x: cursorX - nameW, y: navY - 12, w: nameW, h: 24 };
+                ctx.fillStyle = 'rgba(245, 240, 232, 0.65)';
+                ctx.fillText(nameText, cursorX, navY);
+                cursorX -= nameW + navPadding;
 
-        ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
-        this.drawRoundedRect(this._leaderboardBounds.x, lbY, htpW, htpH, 6);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(245, 240, 232, 0.25)';
-        ctx.lineWidth = 1;
-        this.drawRoundedRect(this._leaderboardBounds.x, lbY, htpW, htpH, 6);
-        ctx.stroke();
+                this._menuSignInBounds = null;
+            } else {
+                const signText = 'Sign In / Sign Up';
+                const signW = ctx.measureText(signText).width + 16;
+                this._menuSignInBounds = { x: cursorX - signW, y: navY - 12, w: signW, h: 24 };
+                ctx.fillStyle = COLORS.sunsetGold;
+                ctx.fillText(signText, cursorX, navY);
+                cursorX -= signW + navPadding;
 
-        ctx.fillStyle = 'rgba(245, 240, 232, 0.7)';
-        ctx.font = `${tiny ? 10 : compact ? 12 : 14}px Inter, sans-serif`;
-        ctx.fillText('🏆  Leaderboard', cx, lbY + htpH / 2);
+                this._menuSignOutBounds = null;
+                this._menuUsernameBounds = null;
+            }
 
-        // Sign-in link (guests) or username display (authenticated)
-        const signInY = lbY + htpH + (tiny ? 14 : 22);
-        ctx.font = `${tiny ? 10 : compact ? 12 : 13}px Inter, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+            // Separator dot
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.25)';
+            ctx.fillText('·', cursorX + navPadding / 2 - 2, navY);
 
-        if (isAuthenticatedSync()) {
-            const name = getCachedUsername() || 'Captain';
-            ctx.fillStyle = 'rgba(245, 240, 232, 0.6)';
-            ctx.fillText(`⚓  ${name}`, cx, signInY);
-            const nameW = Math.max(ctx.measureText(`⚓  ${name}`).width + 16, 100);
-            this._menuUsernameBounds = { x: cx - nameW / 2, y: signInY - 10, w: nameW, h: 20 };
-            this._menuSignInBounds = null;
+            // Leaderboard
+            const lbText = 'Leaderboard';
+            const lbW = ctx.measureText(lbText).width + 16;
+            this._leaderboardBounds = { x: cursorX - lbW, y: navY - 12, w: lbW, h: 24 };
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.65)';
+            ctx.fillText(lbText, cursorX, navY);
+            cursorX -= lbW + navPadding;
 
-            // Sign out link
-            const signOutY = signInY + (tiny ? 16 : 20);
-            ctx.fillStyle = 'rgba(245, 240, 232, 0.55)';
-            ctx.font = `${tiny ? 9 : 11}px Inter, sans-serif`;
-            ctx.fillText('Sign Out', cx, signOutY);
-            const soW = tiny ? 60 : 70;
-            this._menuSignOutBounds = { x: cx - soW / 2, y: signOutY - 10, w: soW, h: 20 };
+            // Separator dot
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.25)';
+            ctx.fillText('·', cursorX + navPadding / 2 - 2, navY);
+
+            // How to Play
+            const htpText = 'How to Play';
+            const htpW = ctx.measureText(htpText).width + 16;
+            this.howToPlayBounds = { x: cursorX - htpW, y: navY - 12, w: htpW, h: 24 };
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.65)';
+            ctx.fillText(htpText, cursorX, navY);
         } else {
-            ctx.fillStyle = COLORS.sunsetGold;
-            ctx.fillText('⚓  Sign In / Sign Up', cx, signInY);
-            const signInW = tiny ? 120 : 150;
-            this._menuSignInBounds = { x: cx - signInW / 2, y: signInY - 10, w: signInW, h: 20 };
-            this._menuSignOutBounds = null;
-            this._menuUsernameBounds = null;
+            // Mobile: centered buttons below game modes
+            // How to Play button
+            const htpW = tiny ? 120 : compact ? 140 : 160;
+            const htpY = startY + this.menuButtons.length * (btnHeight + btnGap) + htpGap;
+            this.howToPlayBounds = { x: cx - htpW / 2, y: htpY, w: htpW, h: htpH };
+
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
+            this.drawRoundedRect(this.howToPlayBounds.x, htpY, htpW, htpH, 6);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(245, 240, 232, 0.25)';
+            ctx.lineWidth = 1;
+            this.drawRoundedRect(this.howToPlayBounds.x, htpY, htpW, htpH, 6);
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.7)';
+            ctx.font = `${tiny ? 10 : compact ? 12 : 14}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('📖  How to Play', cx, htpY + htpH / 2);
+
+            // Leaderboard button
+            const lbY = htpY + htpH + (tiny ? 6 : 8);
+            this._leaderboardBounds = { x: cx - htpW / 2, y: lbY, w: htpW, h: htpH };
+
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
+            this.drawRoundedRect(this._leaderboardBounds.x, lbY, htpW, htpH, 6);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(245, 240, 232, 0.25)';
+            ctx.lineWidth = 1;
+            this.drawRoundedRect(this._leaderboardBounds.x, lbY, htpW, htpH, 6);
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.7)';
+            ctx.font = `${tiny ? 10 : compact ? 12 : 14}px Inter, sans-serif`;
+            ctx.fillText('🏆  Leaderboard', cx, lbY + htpH / 2);
+
+            // Sign-in link (guests) or username display (authenticated)
+            const signInY = lbY + htpH + (tiny ? 14 : 22);
+            ctx.font = `${tiny ? 10 : compact ? 12 : 13}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            if (isAuthenticatedSync()) {
+                const name = getCachedUsername() || 'Captain';
+                ctx.fillStyle = 'rgba(245, 240, 232, 0.6)';
+                ctx.fillText(`⚓  ${name}`, cx, signInY);
+                const nameW = Math.max(ctx.measureText(`⚓  ${name}`).width + 16, 100);
+                this._menuUsernameBounds = { x: cx - nameW / 2, y: signInY - 10, w: nameW, h: 20 };
+                this._menuSignInBounds = null;
+
+                // Sign out link
+                const signOutY = signInY + (tiny ? 16 : 20);
+                ctx.fillStyle = 'rgba(245, 240, 232, 0.55)';
+                ctx.font = `${tiny ? 9 : 11}px Inter, sans-serif`;
+                ctx.fillText('Sign Out', cx, signOutY);
+                const soW = tiny ? 60 : 70;
+                this._menuSignOutBounds = { x: cx - soW / 2, y: signOutY - 10, w: soW, h: 20 };
+            } else {
+                ctx.fillStyle = COLORS.sunsetGold;
+                ctx.fillText('⚓  Sign In / Sign Up', cx, signInY);
+                const signInW = tiny ? 120 : 150;
+                this._menuSignInBounds = { x: cx - signInW / 2, y: signInY - 10, w: signInW, h: 20 };
+                this._menuSignOutBounds = null;
+                this._menuUsernameBounds = null;
+            }
         }
 
         // Footer (only on tall screens)
         if (!compact) {
             ctx.fillStyle = 'rgba(245, 240, 232, 0.55)';
             ctx.font = '12px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             ctx.fillText('Drag to aim • Release to fire', cx, h - 20);
         }
     }

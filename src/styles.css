@@ -115,3 +115,12 @@ body {
 body.portrait-mode #rotateOverlay {
   display: flex;
 }
+
+/* Safety: never show mobile overlays on desktop/laptop (fine pointer = mouse/trackpad) */
+@media (pointer: fine) {
+
+  #rotateOverlay,
+  #loadingScreen {
+    display: none !important;
+  }
+}
