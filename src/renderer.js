@@ -257,317 +257,316 @@ export class Renderer {
             if (idx === 1) {
                 const chestX = x;
                 const chestBaseY = baseY - h * 0.38;
-                const cw = 32;   // chest half-width
-                const ch = 22;   // chest body height
-                const lidH = 18; // lid dome height
+                const cw = 34;   // chest half-width
+                const ch = 24;   // chest body height
+                const gold = '#C8A22C';  // brass/gold frame color
+                const goldL = '#DDB83A'; // lighter gold
+                const goldD = '#9A7A1A'; // darker gold
+                const wood = '#6B3518';  // dark wood
+                const woodL = '#8B4E2A'; // lighter wood
 
                 // ── Shadow ──
-                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.fillStyle = 'rgba(0,0,0,0.22)';
                 ctx.beginPath();
-                ctx.ellipse(chestX, chestBaseY + 3, cw + 6, 6, 0, 0, Math.PI * 2);
+                ctx.ellipse(chestX, chestBaseY + 4, cw + 8, 7, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // ── Open lid (drawn first, behind everything) ──
+                // Lid interior (dark wood inside)
+                ctx.fillStyle = '#4A2510';
+                ctx.beginPath();
+                ctx.moveTo(chestX - cw + 1, chestBaseY - ch);
+                ctx.lineTo(chestX - cw + 4, chestBaseY - ch - 28);
+                ctx.lineTo(chestX + cw - 4, chestBaseY - ch - 28);
+                ctx.lineTo(chestX + cw - 1, chestBaseY - ch);
+                ctx.closePath();
+                ctx.fill();
+                // Wood grain lines on lid interior
+                ctx.strokeStyle = '#3A1A08';
+                ctx.lineWidth = 0.6;
+                for (let li = 6; li < 26; li += 4) {
+                    ctx.beginPath();
+                    ctx.moveTo(chestX - cw + 6, chestBaseY - ch - li);
+                    ctx.lineTo(chestX + cw - 6, chestBaseY - ch - li);
+                    ctx.stroke();
+                }
+                // Lid outer frame (gold)
+                ctx.strokeStyle = gold;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(chestX - cw + 1, chestBaseY - ch);
+                ctx.lineTo(chestX - cw + 4, chestBaseY - ch - 28);
+                ctx.lineTo(chestX + cw - 4, chestBaseY - ch - 28);
+                ctx.lineTo(chestX + cw - 1, chestBaseY - ch);
+                ctx.stroke();
+                // Lid top edge (rounded top of lid)
+                ctx.fillStyle = gold;
+                ctx.beginPath();
+                ctx.moveTo(chestX - cw + 4, chestBaseY - ch - 28);
+                ctx.quadraticCurveTo(chestX, chestBaseY - ch - 34, chestX + cw - 4, chestBaseY - ch - 28);
+                ctx.lineTo(chestX + cw - 4, chestBaseY - ch - 28);
+                ctx.closePath();
+                ctx.fill();
+                // Lid dome fill (wood on the outside of lid top)
+                ctx.fillStyle = woodL;
+                ctx.beginPath();
+                ctx.moveTo(chestX - cw + 5, chestBaseY - ch - 28);
+                ctx.quadraticCurveTo(chestX, chestBaseY - ch - 33, chestX + cw - 5, chestBaseY - ch - 28);
+                ctx.closePath();
                 ctx.fill();
 
                 // ── Chest body ──
-                // Main body
-                ctx.fillStyle = '#7A3B15';
-                ctx.beginPath();
-                ctx.moveTo(chestX - cw, chestBaseY);
-                ctx.lineTo(chestX - cw, chestBaseY - ch);
-                ctx.lineTo(chestX + cw, chestBaseY - ch);
-                ctx.lineTo(chestX + cw, chestBaseY);
-                ctx.closePath();
-                ctx.fill();
-
-                // Wood plank lines
+                // Main wood body
+                ctx.fillStyle = wood;
+                ctx.fillRect(chestX - cw, chestBaseY - ch, cw * 2, ch);
+                // Lighter wood center panel
+                ctx.fillStyle = woodL;
+                ctx.fillRect(chestX - cw + 4, chestBaseY - ch + 4, cw * 2 - 8, ch - 8);
+                // Wood grain lines
                 ctx.strokeStyle = '#5A2A0C';
-                ctx.lineWidth = 0.8;
-                for (let wy = 5; wy < ch; wy += 5) {
+                ctx.lineWidth = 0.6;
+                for (let wy = 6; wy < ch - 2; wy += 4) {
                     ctx.beginPath();
-                    ctx.moveTo(chestX - cw + 1, chestBaseY - wy);
-                    ctx.lineTo(chestX + cw - 1, chestBaseY - wy);
+                    ctx.moveTo(chestX - cw + 5, chestBaseY - ch + wy);
+                    ctx.lineTo(chestX + cw - 5, chestBaseY - ch + wy);
                     ctx.stroke();
                 }
 
-                // Front face highlight
-                ctx.fillStyle = '#8B4E2A';
-                ctx.fillRect(chestX - cw + 2, chestBaseY - ch + 2, cw * 2 - 4, 6);
+                // ── Gold frame around body ──
+                ctx.strokeStyle = gold;
+                ctx.lineWidth = 3.5;
+                ctx.strokeRect(chestX - cw, chestBaseY - ch, cw * 2, ch);
+                // Gold band across middle
+                ctx.fillStyle = gold;
+                ctx.fillRect(chestX - cw, chestBaseY - ch * 0.5 - 1.5, cw * 2, 3);
 
-                // ── Dome lid (open, tilted back) ──
-                ctx.fillStyle = '#8B4520';
-                ctx.beginPath();
-                ctx.moveTo(chestX - cw, chestBaseY - ch);
-                ctx.lineTo(chestX - cw + 2, chestBaseY - ch - lidH * 0.3);
-                ctx.quadraticCurveTo(chestX, chestBaseY - ch - lidH, chestX + cw - 2, chestBaseY - ch - lidH * 0.3);
-                ctx.lineTo(chestX + cw, chestBaseY - ch);
-                ctx.closePath();
-                ctx.fill();
-                // Lid highlight
-                ctx.fillStyle = '#A05E30';
-                ctx.beginPath();
-                ctx.moveTo(chestX - cw + 4, chestBaseY - ch);
-                ctx.lineTo(chestX - cw + 6, chestBaseY - ch - lidH * 0.25);
-                ctx.quadraticCurveTo(chestX, chestBaseY - ch - lidH * 0.85, chestX + cw - 6, chestBaseY - ch - lidH * 0.25);
-                ctx.lineTo(chestX + cw - 4, chestBaseY - ch);
-                ctx.closePath();
-                ctx.fill();
-
-                // ── Brass metal bands ──
-                ctx.fillStyle = '#D4A832';
-                // Body bands
-                ctx.fillRect(chestX - cw - 1, chestBaseY - ch, cw * 2 + 2, 3);
-                ctx.fillRect(chestX - cw - 1, chestBaseY - ch * 0.5, cw * 2 + 2, 3);
-                ctx.fillRect(chestX - cw - 1, chestBaseY - 2, cw * 2 + 2, 3);
-                // Lid band
-                ctx.beginPath();
-                ctx.moveTo(chestX - cw + 2, chestBaseY - ch - lidH * 0.28);
-                ctx.quadraticCurveTo(chestX, chestBaseY - ch - lidH * 0.95, chestX + cw - 2, chestBaseY - ch - lidH * 0.28);
-                ctx.lineWidth = 2.5;
-                ctx.strokeStyle = '#D4A832';
-                ctx.stroke();
-
-                // Rivets on bands
-                ctx.fillStyle = '#FFE066';
-                const rivetPositions = [-cw + 5, -cw / 2, 0, cw / 2, cw - 5];
-                rivetPositions.forEach(rx => {
+                // ── Corner brackets (decorative gold shapes at corners) ──
+                const drawCornerBracket = (bx, by, flipX, flipY) => {
+                    const dx = flipX ? -1 : 1;
+                    const dy = flipY ? -1 : 1;
+                    ctx.fillStyle = goldL;
                     ctx.beginPath();
-                    ctx.arc(chestX + rx, chestBaseY - ch + 1.5, 2, 0, Math.PI * 2);
+                    ctx.moveTo(bx, by);
+                    ctx.lineTo(bx + dx * 10, by);
+                    ctx.lineTo(bx + dx * 8, by + dy * 4);
+                    ctx.lineTo(bx + dx * 4, by + dy * 8);
+                    ctx.lineTo(bx, by + dy * 10);
+                    ctx.closePath();
                     ctx.fill();
+                };
+                drawCornerBracket(chestX - cw, chestBaseY, 1, -1);
+                drawCornerBracket(chestX + cw, chestBaseY, -1, -1);
+                drawCornerBracket(chestX - cw, chestBaseY - ch, 1, 1);
+                drawCornerBracket(chestX + cw, chestBaseY - ch, -1, 1);
+
+                // ── Rivets (gold circles at corners and along bands) ──
+                ctx.fillStyle = goldL;
+                const rivets = [
+                    [-cw + 3, -3], [cw - 3, -3],       // bottom corners
+                    [-cw + 3, -ch + 3], [cw - 3, -ch + 3], // top corners
+                    [-cw + 3, -ch / 2], [cw - 3, -ch / 2], // middle band
+                    [0, -3], [0, -ch + 3],                  // center top/bottom
+                ];
+                rivets.forEach(([rx, ry]) => {
                     ctx.beginPath();
-                    ctx.arc(chestX + rx, chestBaseY - 0.5, 2, 0, Math.PI * 2);
+                    ctx.arc(chestX + rx, chestBaseY + ry, 2.2, 0, Math.PI * 2);
                     ctx.fill();
                 });
 
-                // ── Front lock/latch ──
-                ctx.fillStyle = '#D4A832';
-                ctx.fillRect(chestX - 5, chestBaseY - ch - 2, 10, 6);
-                ctx.fillStyle = '#B8901E';
+                // ── Front clasp/latch ──
+                ctx.fillStyle = gold;
+                // Clasp plate
                 ctx.beginPath();
-                ctx.arc(chestX, chestBaseY - ch + 1, 3.5, 0, Math.PI * 2);
+                ctx.moveTo(chestX - 6, chestBaseY - ch - 1);
+                ctx.lineTo(chestX + 6, chestBaseY - ch - 1);
+                ctx.lineTo(chestX + 5, chestBaseY - ch + 5);
+                ctx.quadraticCurveTo(chestX, chestBaseY - ch + 8, chestX - 5, chestBaseY - ch + 5);
+                ctx.closePath();
                 ctx.fill();
-                ctx.fillStyle = '#3A2005';
+                // Clasp loop
+                ctx.strokeStyle = goldD;
+                ctx.lineWidth = 1.5;
                 ctx.beginPath();
-                ctx.arc(chestX, chestBaseY - ch + 1, 1.5, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.arc(chestX, chestBaseY - ch + 4, 3, 0, Math.PI * 2);
+                ctx.stroke();
 
-                // ── Helper: draw a single coin as a flat disc with visible edge ──
+                // ── Gold coins filling the chest ──
+                // Draw coins as warm gold-brown overlapping ellipses
                 const drawCoin = (cx, cy, r, tilt) => {
-                    const edgeH = r * 0.35; // visible edge thickness
-                    // Edge (darker, shows the coin is a disc)
-                    ctx.fillStyle = '#B8860B';
+                    // Coin edge (visible thickness)
+                    ctx.fillStyle = '#9A7200';
                     ctx.beginPath();
-                    ctx.ellipse(cx, cy + edgeH, r, r * tilt, 0, 0, Math.PI);
+                    ctx.ellipse(cx, cy + r * 0.3, r, r * tilt, 0, 0, Math.PI);
                     ctx.fill();
-                    // Face (top ellipse)
-                    ctx.fillStyle = '#FFD700';
+                    // Coin face
+                    ctx.fillStyle = '#D4A030';
                     ctx.beginPath();
                     ctx.ellipse(cx, cy, r, r * tilt, 0, 0, Math.PI * 2);
                     ctx.fill();
                     // Outline
-                    ctx.strokeStyle = '#9A7200';
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                    // Inner ring (makes it look like a coin, not a circle)
-                    ctx.strokeStyle = '#E5B800';
+                    ctx.strokeStyle = '#8A6010';
                     ctx.lineWidth = 0.7;
-                    ctx.beginPath();
-                    ctx.ellipse(cx, cy, r * 0.65, r * 0.65 * tilt, 0, 0, Math.PI * 2);
                     ctx.stroke();
-                    // Light catch
-                    ctx.fillStyle = 'rgba(255,255,230,0.45)';
+                    // Shine highlight
+                    ctx.fillStyle = 'rgba(240,220,160,0.5)';
                     ctx.beginPath();
-                    ctx.ellipse(cx - r * 0.2, cy - r * tilt * 0.15, r * 0.3, r * 0.2 * tilt, -0.3, 0, Math.PI * 2);
+                    ctx.ellipse(cx - r * 0.2, cy - r * tilt * 0.2, r * 0.35, r * 0.25 * tilt, -0.3, 0, Math.PI * 2);
                     ctx.fill();
                 };
 
-                // ── Helper: draw a small pile of stacked coins ──
-                const drawCoinPile = (px, py, count, r, tilt) => {
-                    const stackGap = r * 0.3;
-                    for (let i = 0; i < count; i++) {
-                        drawCoin(px, py - i * stackGap, r, tilt);
-                    }
+                // Heaped coins (messy overlapping pile inside chest)
+                const coinHeap = [
+                    // Bottom row (inside chest, partially hidden)
+                    { cx: -20, cy: -ch - 1, r: 5.5, t: 0.45 },
+                    { cx: -10, cy: -ch, r: 5, t: 0.5 },
+                    { cx: 0, cy: -ch - 1, r: 5.5, t: 0.45 },
+                    { cx: 10, cy: -ch, r: 5, t: 0.5 },
+                    { cx: 20, cy: -ch - 1, r: 5.5, t: 0.45 },
+                    // Middle row
+                    { cx: -16, cy: -ch - 4, r: 5, t: 0.45 },
+                    { cx: -5, cy: -ch - 5, r: 5.5, t: 0.5 },
+                    { cx: 6, cy: -ch - 4, r: 5, t: 0.45 },
+                    { cx: 16, cy: -ch - 3, r: 5, t: 0.5 },
+                    // Top row
+                    { cx: -12, cy: -ch - 8, r: 4.5, t: 0.45 },
+                    { cx: 2, cy: -ch - 9, r: 5, t: 0.5 },
+                    { cx: 14, cy: -ch - 7, r: 4.5, t: 0.45 },
+                    // Peak coins
+                    { cx: -4, cy: -ch - 12, r: 4, t: 0.5 },
+                    { cx: 8, cy: -ch - 11, r: 4, t: 0.45 },
+                ];
+                // Spilling coins outside chest
+                const spillCoins = [
+                    { cx: -cw - 5, cy: -4, r: 5, t: 0.5 },
+                    { cx: -cw - 1, cy: -1, r: 4, t: 0.45 },
+                    { cx: cw + 4, cy: -3, r: 5, t: 0.5 },
+                    { cx: cw + 1, cy: 0, r: 4, t: 0.45 },
+                ];
+
+                // Draw heap coins (interleave with gems)
+                // First draw bottom + middle coins
+                coinHeap.slice(0, 9).forEach(c => {
+                    drawCoin(chestX + c.cx, chestBaseY + c.cy, c.r, c.t);
+                });
+
+                // ── Gems scattered among coins ──
+                // Helper: draw a simple gem shape
+                const drawGem = (gx, gy, size, color, colorDark) => {
+                    // Pentagon/diamond shape (like reference)
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(gx, gy - size);          // top
+                    ctx.lineTo(gx + size * 0.8, gy - size * 0.2); // top-right
+                    ctx.lineTo(gx + size * 0.6, gy + size * 0.7); // bottom-right
+                    ctx.lineTo(gx - size * 0.6, gy + size * 0.7); // bottom-left
+                    ctx.lineTo(gx - size * 0.8, gy - size * 0.2); // top-left
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.strokeStyle = colorDark;
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                    // Facet line from top to bottom corners
+                    ctx.beginPath();
+                    ctx.moveTo(gx, gy - size);
+                    ctx.lineTo(gx - size * 0.5, gy + size * 0.7);
+                    ctx.moveTo(gx, gy - size);
+                    ctx.lineTo(gx + size * 0.5, gy + size * 0.7);
+                    ctx.stroke();
+                    // Light catch
+                    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+                    ctx.beginPath();
+                    ctx.moveTo(gx - size * 0.1, gy - size * 0.7);
+                    ctx.lineTo(gx + size * 0.3, gy - size * 0.1);
+                    ctx.lineTo(gx, gy + size * 0.2);
+                    ctx.lineTo(gx - size * 0.4, gy - size * 0.2);
+                    ctx.closePath();
+                    ctx.fill();
                 };
 
-                // ── Coin piles inside the chest ──
-                drawCoinPile(chestX - 14, chestBaseY - ch - 2, 5, 6, 0.45);
-                drawCoinPile(chestX + 2, chestBaseY - ch - 1, 6, 5.5, 0.5);
-                drawCoinPile(chestX + 16, chestBaseY - ch - 2, 4, 6, 0.4);
-
-                // ── Loose coins spilling out ──
-                drawCoin(chestX - cw - 6, chestBaseY - 4, 5, 0.5);
-                drawCoin(chestX - cw - 1, chestBaseY - 1, 4.5, 0.45);
-                drawCoin(chestX + cw + 5, chestBaseY - 3, 5, 0.5);
-                drawCoin(chestX + cw + 1, chestBaseY, 4, 0.45);
-                // A couple tilted/fallen coins on the sand
-                drawCoin(chestX - cw - 10, chestBaseY + 1, 4, 0.6);
-                drawCoin(chestX + cw + 9, chestBaseY + 2, 3.5, 0.55);
-
-                // ── Ruby — classic brilliant-cut diamond shape ──
-                const rX = chestX + 2, rY = chestBaseY - ch - 12;
-                // Crown (top triangle)
-                ctx.fillStyle = '#E01030';
-                ctx.beginPath();
-                ctx.moveTo(rX - 7, rY);       // left of girdle
-                ctx.lineTo(rX, rY - 9);   // top point
-                ctx.lineTo(rX + 7, rY);       // right of girdle
-                ctx.closePath();
-                ctx.fill();
-                // Pavilion (bottom triangle)
-                ctx.fillStyle = '#C00020';
-                ctx.beginPath();
-                ctx.moveTo(rX - 7, rY);
-                ctx.lineTo(rX, rY + 6);   // bottom point
-                ctx.lineTo(rX + 7, rY);
-                ctx.closePath();
-                ctx.fill();
-                // Outline
-                ctx.strokeStyle = '#800015';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(rX, rY - 9);
-                ctx.lineTo(rX + 7, rY);
-                ctx.lineTo(rX, rY + 6);
-                ctx.lineTo(rX - 7, rY);
-                ctx.closePath();
-                ctx.stroke();
-                // Girdle line
-                ctx.beginPath();
-                ctx.moveTo(rX - 7, rY);
-                ctx.lineTo(rX + 7, rY);
-                ctx.stroke();
-                // Internal facet lines (crown)
-                ctx.strokeStyle = 'rgba(255,100,120,0.5)';
-                ctx.lineWidth = 0.7;
-                ctx.beginPath();
-                ctx.moveTo(rX, rY - 9);
-                ctx.lineTo(rX - 3, rY);
-                ctx.moveTo(rX, rY - 9);
-                ctx.lineTo(rX + 3, rY);
-                ctx.stroke();
-                // Internal facet lines (pavilion)
-                ctx.beginPath();
-                ctx.moveTo(rX, rY + 6);
-                ctx.lineTo(rX - 4, rY);
-                ctx.moveTo(rX, rY + 6);
-                ctx.lineTo(rX + 4, rY);
-                ctx.stroke();
-                // Light catch
-                ctx.fillStyle = 'rgba(255,200,210,0.55)';
-                ctx.beginPath();
-                ctx.moveTo(rX - 2, rY - 6);
-                ctx.lineTo(rX + 1, rY - 3);
-                ctx.lineTo(rX - 1, rY - 1);
-                ctx.lineTo(rX - 4, rY - 3);
-                ctx.closePath();
-                ctx.fill();
-
-                // ── Emerald — rectangular emerald-cut ──
-                const eX = chestX - 15, eY = chestBaseY - ch - 9;
-                const ew = 7, eh = 9; // half-sizes
-                const ec = 2.5; // corner cut
-                // Main shape with cut corners
-                ctx.fillStyle = '#10A848';
-                ctx.beginPath();
-                ctx.moveTo(eX - ew + ec, eY - eh);
-                ctx.lineTo(eX + ew - ec, eY - eh);
-                ctx.lineTo(eX + ew, eY - eh + ec);
-                ctx.lineTo(eX + ew, eY + eh - ec);
-                ctx.lineTo(eX + ew - ec, eY + eh);
-                ctx.lineTo(eX - ew + ec, eY + eh);
-                ctx.lineTo(eX - ew, eY + eh - ec);
-                ctx.lineTo(eX - ew, eY - eh + ec);
-                ctx.closePath();
-                ctx.fill();
-                // Outline
-                ctx.strokeStyle = '#0A6E30';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                // Step facet lines (horizontal)
-                ctx.strokeStyle = 'rgba(180,255,200,0.4)';
-                ctx.lineWidth = 0.7;
-                for (const fy of [-4, -1, 2, 5]) {
+                // Helper: draw a square-ish gem (emerald cut)
+                const drawSquareGem = (gx, gy, size, color, colorDark) => {
+                    ctx.fillStyle = color;
+                    const s = size;
                     ctx.beginPath();
-                    ctx.moveTo(eX - ew + 1.5, eY + fy);
-                    ctx.lineTo(eX + ew - 1.5, eY + fy);
+                    ctx.moveTo(gx - s * 0.6, gy - s);
+                    ctx.lineTo(gx + s * 0.6, gy - s);
+                    ctx.lineTo(gx + s, gy - s * 0.3);
+                    ctx.lineTo(gx + s, gy + s * 0.6);
+                    ctx.lineTo(gx + s * 0.6, gy + s);
+                    ctx.lineTo(gx - s * 0.6, gy + s);
+                    ctx.lineTo(gx - s, gy + s * 0.6);
+                    ctx.lineTo(gx - s, gy - s * 0.3);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.strokeStyle = colorDark;
+                    ctx.lineWidth = 0.8;
                     ctx.stroke();
-                }
-                // Step facet lines (vertical)
-                for (const fx of [-3, 0, 3]) {
+                    // Inner facet
+                    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+                    ctx.lineWidth = 0.6;
                     ctx.beginPath();
-                    ctx.moveTo(eX + fx, eY - eh + 1.5);
-                    ctx.lineTo(eX + fx, eY + eh - 1.5);
+                    ctx.moveTo(gx - s * 0.3, gy - s * 0.5);
+                    ctx.lineTo(gx + s * 0.3, gy - s * 0.5);
+                    ctx.lineTo(gx + s * 0.5, gy);
+                    ctx.lineTo(gx + s * 0.3, gy + s * 0.5);
+                    ctx.lineTo(gx - s * 0.3, gy + s * 0.5);
+                    ctx.lineTo(gx - s * 0.5, gy);
+                    ctx.closePath();
                     ctx.stroke();
-                }
-                // Light catch
-                ctx.fillStyle = 'rgba(200,255,220,0.4)';
-                ctx.fillRect(eX - 3, eY - 5, 4, 6);
+                    // Light catch
+                    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                    ctx.fillRect(gx - s * 0.2, gy - s * 0.6, s * 0.4, s * 0.6);
+                };
 
-                // ── Sapphire — pear/teardrop cut ──
-                const sX = chestX + 17, sY = chestBaseY - ch - 8;
-                ctx.fillStyle = '#1E50D0';
-                ctx.beginPath();
-                ctx.moveTo(sX, sY - 8);  // top point
-                ctx.quadraticCurveTo(sX + 7, sY - 2, sX + 5, sY + 4);
-                ctx.quadraticCurveTo(sX, sY + 8, sX - 5, sY + 4);
-                ctx.quadraticCurveTo(sX - 7, sY - 2, sX, sY - 8);
-                ctx.closePath();
-                ctx.fill();
-                // Outline
-                ctx.strokeStyle = '#0E2E80';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                // Internal facet lines radiating from top
-                ctx.strokeStyle = 'rgba(130,170,255,0.45)';
-                ctx.lineWidth = 0.7;
-                ctx.beginPath();
-                ctx.moveTo(sX, sY - 8);
-                ctx.lineTo(sX - 4, sY + 3);
-                ctx.moveTo(sX, sY - 8);
-                ctx.lineTo(sX + 4, sY + 3);
-                ctx.moveTo(sX, sY - 8);
-                ctx.lineTo(sX - 2, sY + 5);
-                ctx.moveTo(sX, sY - 8);
-                ctx.lineTo(sX + 2, sY + 5);
-                ctx.stroke();
-                // Horizontal girdle
-                ctx.beginPath();
-                ctx.moveTo(sX - 6, sY);
-                ctx.lineTo(sX + 6, sY);
-                ctx.stroke();
-                // Light catch
-                ctx.fillStyle = 'rgba(180,210,255,0.45)';
-                ctx.beginPath();
-                ctx.moveTo(sX - 1, sY - 5);
-                ctx.lineTo(sX + 2, sY - 2);
-                ctx.lineTo(sX, sY + 1);
-                ctx.lineTo(sX - 3, sY - 1);
-                ctx.closePath();
-                ctx.fill();
+                // Gems nestled in the coins (matching reference colors)
+                // Red gems (diamond shape)
+                drawGem(chestX - 8, chestBaseY - ch - 6, 5.5, '#E82040', '#900015');
+                drawGem(chestX + 18, chestBaseY - ch - 4, 4.5, '#F04060', '#A01030');
+                // Green gems (square emerald cut)
+                drawSquareGem(chestX - 18, chestBaseY - ch - 5, 5, '#20C050', '#0A7030');
+                drawSquareGem(chestX + 6, chestBaseY - ch - 3, 4.5, '#30B848', '#0A6828');
+                // Blue gem (diamond shape)
+                drawGem(chestX + 12, chestBaseY - ch - 8, 4.5, '#50A0F0', '#2060A0');
+                // Pink gem
+                drawGem(chestX - 14, chestBaseY - ch - 9, 4, '#F06090', '#A03060');
+
+                // Draw top coins (on top of gems)
+                coinHeap.slice(9).forEach(c => {
+                    drawCoin(chestX + c.cx, chestBaseY + c.cy, c.r, c.t);
+                });
+
+                // Draw spilling coins
+                spillCoins.forEach(c => {
+                    drawCoin(chestX + c.cx, chestBaseY + c.cy, c.r, c.t);
+                });
+
+                // Fallen gems on the ground (like reference)
+                drawGem(chestX - cw - 8, chestBaseY + 3, 3.5, '#F04060', '#A01030');
+                drawSquareGem(chestX + cw + 8, chestBaseY + 2, 3.5, '#20C050', '#0A7030');
 
                 // ── Subtle animated sparkle ──
-                const sparkAlpha = Math.max(0, Math.sin(time * 2.5)) * 0.7;
+                const sparkAlpha = Math.max(0, Math.sin(time * 2.5)) * 0.6;
                 if (sparkAlpha > 0.15) {
-                    const sz = 2.5 + sparkAlpha * 1.5;
-                    ctx.strokeStyle = `rgba(255,255,240,${sparkAlpha})`;
+                    const sz = 2 + sparkAlpha * 1.5;
+                    ctx.strokeStyle = `rgba(255,255,220,${sparkAlpha})`;
                     ctx.lineWidth = 1;
-                    // Sparkle near ruby
                     ctx.beginPath();
-                    ctx.moveTo(rX + 5 - sz, rY - 5);
-                    ctx.lineTo(rX + 5 + sz, rY - 5);
-                    ctx.moveTo(rX + 5, rY - 5 - sz);
-                    ctx.lineTo(rX + 5, rY - 5 + sz);
+                    ctx.moveTo(chestX + 5 - sz, chestBaseY - ch - 10);
+                    ctx.lineTo(chestX + 5 + sz, chestBaseY - ch - 10);
+                    ctx.moveTo(chestX + 5, chestBaseY - ch - 10 - sz);
+                    ctx.lineTo(chestX + 5, chestBaseY - ch - 10 + sz);
                     ctx.stroke();
                 }
-                const sparkAlpha2 = Math.max(0, Math.sin(time * 2.5 + 2.5)) * 0.7;
+                const sparkAlpha2 = Math.max(0, Math.sin(time * 2.5 + 2.5)) * 0.6;
                 if (sparkAlpha2 > 0.15) {
                     const sz2 = 2 + sparkAlpha2 * 1.5;
-                    ctx.strokeStyle = `rgba(255,255,240,${sparkAlpha2})`;
+                    ctx.strokeStyle = `rgba(255,255,220,${sparkAlpha2})`;
                     ctx.lineWidth = 1;
-                    // Sparkle near sapphire
                     ctx.beginPath();
-                    ctx.moveTo(sX - 3 - sz2, sY - 4);
-                    ctx.lineTo(sX - 3 + sz2, sY - 4);
-                    ctx.moveTo(sX - 3, sY - 4 - sz2);
-                    ctx.lineTo(sX - 3, sY - 4 + sz2);
+                    ctx.moveTo(chestX - 10 - sz2, chestBaseY - ch - 6);
+                    ctx.lineTo(chestX - 10 + sz2, chestBaseY - ch - 6);
+                    ctx.moveTo(chestX - 10, chestBaseY - ch - 6 - sz2);
+                    ctx.lineTo(chestX - 10, chestBaseY - ch - 6 + sz2);
                     ctx.stroke();
                 }
             }
