@@ -18,6 +18,8 @@ let turnTimeLeft = 0;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 2;
 const TURN_DURATION = 20; // seconds
+const MATCHMAKING_TIMEOUT = 40; // seconds
+let _matchmakingTimeout = null;
 
 // Callbacks set by game.js
 let _onMatchFound = null;
@@ -25,18 +27,20 @@ let _onOpponentFire = null;
 let _onOpponentForfeit = null;
 let _onTurnTimeout = null;
 let _onTimerTick = null;
+let _onMatchTimeout = null;
 
 // ── Public API ─────────────────────────────────────
 
 /**
  * Set event callbacks from game.js
  */
-export function setCallbacks({ onMatchFound, onOpponentFire, onOpponentForfeit, onTurnTimeout, onTimerTick }) {
+export function setCallbacks({ onMatchFound, onOpponentFire, onOpponentForfeit, onTurnTimeout, onTimerTick, onMatchTimeout }) {
     _onMatchFound = onMatchFound;
     _onOpponentFire = onOpponentFire;
     _onOpponentForfeit = onOpponentForfeit;
     _onTurnTimeout = onTurnTimeout;
     _onTimerTick = onTimerTick;
+    _onMatchTimeout = onMatchTimeout;
 }
 
 /**
@@ -89,6 +93,13 @@ export async function joinQueue() {
 
     // Also poll every 2s as fallback
     _startPolling();
+
+    // Start matchmaking timeout (40s)
+    _matchmakingTimeout = setTimeout(async () => {
+        _matchmakingTimeout = null;
+        await leaveQueue();
+        if (_onMatchTimeout) _onMatchTimeout();
+    }, MATCHMAKING_TIMEOUT * 1000);
 }
 
 /**
@@ -96,6 +107,7 @@ export async function joinQueue() {
  */
 export async function leaveQueue() {
     _stopPolling();
+    _clearMatchmakingTimeout();
     if (queueSubscription) {
         const supabase = getSupabase();
         supabase.removeChannel(queueSubscription);
@@ -205,6 +217,7 @@ export async function saveOnlineMatchResult(winnerId, rounds, accuracy, duration
 export function disconnect() {
     stopTurnTimer();
     _stopPolling();
+    _clearMatchmakingTimeout();
 
     const supabase = getSupabase();
     if (supabase) {
@@ -252,6 +265,13 @@ function _stopPolling() {
     }
 }
 
+function _clearMatchmakingTimeout() {
+    if (_matchmakingTimeout) {
+        clearTimeout(_matchmakingTimeout);
+        _matchmakingTimeout = null;
+    }
+}
+
 async function tryFindMatch() {
     const supabase = getSupabase();
     if (!supabase || !localPlayerId) return false;
@@ -266,6 +286,7 @@ async function tryFindMatch() {
     if (data) {
         matchId = data;
         _stopPolling();
+        _clearMatchmakingTimeout();
         if (queueSubscription) {
             supabase.removeChannel(queueSubscription);
             queueSubscription = null;

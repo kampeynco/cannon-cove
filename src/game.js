@@ -462,6 +462,11 @@ export class Game {
             onTimerTick: (secondsLeft) => {
                 this.turnTimeLeft = secondsLeft;
             },
+            onMatchTimeout: () => {
+                // No opponent found within 40s — return to menu
+                this.isOnline = false;
+                this.state = STATES.MENU;
+            },
         });
     }
 
