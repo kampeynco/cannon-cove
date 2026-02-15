@@ -34,7 +34,7 @@ function checkOrientation() {
     const isPortrait = h > w;
     const isMobile = isMobileDevice() && Math.min(w, h) < 500;
 
-    if (isMobile && isPortrait) {
+    if (isMobile && isPortrait && !document.body.dataset.portraitDismissed) {
         document.body.classList.add('portrait-mode');
     } else {
         const wasPortrait = document.body.classList.contains('portrait-mode');

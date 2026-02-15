@@ -63,7 +63,8 @@
       <h2>Rotate Your Device</h2>
       <p>Cannon Cove plays best in landscape mode</p>
       <a href="#dismiss-rotate" class="rotate-dismiss"
-        onclick="document.getElementById('rotateOverlay').style.display='none'">Continue anyway →</a>
+        onclick="document.getElementById('rotateOverlay').style.display='none'; document.body.classList.remove('portrait-mode'); document.body.dataset.portraitDismissed='1'">Play
+        in Portrait →</a>
     </div>
   </div>
   <div id="loadingScreen">

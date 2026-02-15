@@ -116,18 +116,23 @@ body.portrait-mode #rotateOverlay {
   display: flex;
 }
 
-/* "Continue anyway" dismiss link on rotate overlay */
+/* "Play in Portrait" dismiss button on rotate overlay */
 .rotate-dismiss {
   display: inline-block;
   margin-top: 20px;
-  color: rgba(245, 240, 232, 0.5);
-  font-size: 13px;
+  padding: 10px 24px;
+  color: #F5F0E8;
+  font-size: 15px;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 0.2s;
+  border: 2px solid rgba(245, 240, 232, 0.5);
+  border-radius: 8px;
+  transition: all 0.2s;
 }
 
 .rotate-dismiss:hover {
   color: #F4A623;
+  border-color: #F4A623;
 }
 
 /* Loading text: show mobile text by default, hide desktop text */
