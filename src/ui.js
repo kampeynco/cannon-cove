@@ -73,17 +73,19 @@ export class UIManager {
 
             const isPrimary = i === 0;
             const isOnline = btn.id === 'high_seas';
+            const isGhost = btn.id === 'ghost';
 
             if (isOnline) {
-                // Distinct ocean-blue style for online mode
                 ctx.fillStyle = '#1A6FB5';
+            } else if (isGhost) {
+                ctx.fillStyle = '#1A4D5C';
             } else {
                 ctx.fillStyle = isPrimary ? COLORS.sunsetGold : '#2A2A2A';
             }
             this.drawRoundedRect(cx - btnWidth / 2, by, btnWidth, btnHeight, 8);
             ctx.fill();
 
-            ctx.strokeStyle = isOnline ? '#135A8E' : (isPrimary ? '#D4941E' : '#444444');
+            ctx.strokeStyle = isOnline ? '#135A8E' : isGhost ? '#134048' : (isPrimary ? '#D4941E' : '#444444');
             ctx.lineWidth = 2;
             this.drawRoundedRect(cx - btnWidth / 2, by, btnWidth, btnHeight, 8);
             ctx.stroke();
@@ -414,12 +416,13 @@ export class UIManager {
             const isResume = btn.id === 'resume';
             const isExit = btn.id === 'exit';
             const isHtp = btn.id === 'howtoplay';
-            ctx.fillStyle = isResume ? COLORS.sunsetGold : isExit ? '#1A1A1A' : isHtp ? '#1A3A5C' : '#2A2A2A';
+            const isSound = btn.id === 'sound';
+            ctx.fillStyle = isResume ? COLORS.sunsetGold : isExit ? '#1A1A1A' : isHtp ? '#1A3A5C' : isSound ? '#1A4D5C' : '#2A2A2A';
             this.drawRoundedRect(bounds.x, bounds.y, btnWidth, btnHeight, 8);
             ctx.fill();
 
             // Button border
-            ctx.strokeStyle = isResume ? '#D4941E' : isExit ? '#333333' : isHtp ? '#0F2840' : '#444444';
+            ctx.strokeStyle = isResume ? '#D4941E' : isExit ? '#333333' : isHtp ? '#0F2840' : isSound ? '#134048' : '#444444';
             ctx.lineWidth = 2;
             this.drawRoundedRect(bounds.x, bounds.y, btnWidth, btnHeight, 8);
             ctx.stroke();
