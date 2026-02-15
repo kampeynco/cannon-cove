@@ -90,6 +90,7 @@ Build **Cannon Cove**, a cross-platform artillery game inspired by QBasic Gorill
 ### 1.8 Game Modes
 
 - [x] ⚔️ Duel — 1v1 vs AI (default)
+- [x] 🌊 High Seas — 1v1 online multiplayer (Supabase Realtime)
 - [x] 🏴‍☠️ Crew Battle — 2-player hot-seat
 - [x] 👻 Ghost Fleet — AI vs AI autoplay
 
@@ -100,6 +101,8 @@ Build **Cannon Cove**, a cross-platform artillery game inspired by QBasic Gorill
 - [x] Settings panel (sound toggle, quality)
 - [x] Victory / defeat screen with stats
 - [x] "How to Play" overlay
+- [x] Mobile: 2x2 grid menu layout with stacked secondary links
+- [x] Desktop: top-right nav bar (auth, leaderboard, how to play)
 
 ### ✅ Phase 1 Verification
 
@@ -168,6 +171,22 @@ Build **Cannon Cove**, a cross-platform artillery game inspired by QBasic Gorill
 | Leaderboard | Win 5+ games | Player appears on leaderboard with rank |
 | RLS | Try to update another player via API | Blocked by policy |
 | Guest migration | Play as guest, then sign in | Stats transfer to authenticated account |
+
+### 2.6 Online Multiplayer (High Seas Mode)
+
+- [x] Create `matchmaking_queue` table (status, player_id, match_id, joined_at) with RLS + Realtime
+- [x] Create `online_matches` table (player1_id, player2_id, winner_id, rounds, status, duration)
+- [x] Create `find_match()` FIFO matchmaker DB function with stale entry cleanup (40s expiry)
+- [x] Add `online_wins`, `online_games`, `online_accuracy_pct` columns to `players` table
+- [x] Update `update_player_stats` trigger for online stats tracking
+- [x] Recreate `leaderboard` view as online-only (minimum 3 games)
+- [x] Create `multiplayer.js` module (queue join/leave, Realtime channel, broadcast fire/forfeit, 20s turn timer, reconnect logic)
+- [x] Integrate multiplayer into `game.js` (auth gate, matchmaking state, remote fire handler, online match saving)
+- [x] Add High Seas menu button (ocean blue `#1A6FB5`)
+- [x] Add matchmaking screen with animated sonar pulse + cancel button
+- [x] Add turn timer HUD (countdown arc + turn indicator)
+- [x] Add 40-second matchmaking timeout with card dialog notification
+- [x] Conditional fire button (hidden during opponent's turn)
 
 ---
 
@@ -505,4 +524,4 @@ flowchart LR
 
 **Total estimated timeline (updated):** 8–9 weeks (Part-time) / 4–5 weeks (Full-time)
 
-*✅ Plan updated. Phases 1–2 complete. Next: Phase 3 (Mobile), Phase 4 (Monetization), Phase 5 (Launch), Phase 6 (Sea Voyage).*
+*✅ Plan updated. Phases 1–2 complete (including online multiplayer). Next: Phase 3 (Mobile), Phase 4 (Monetization), Phase 5 (Launch), Phase 6 (Sea Voyage).*

@@ -1041,30 +1041,62 @@ export class Renderer {
         // Player 2 HP (top-right)
         this.drawPlayerHUD(canvas.width - 20, 20, player2, false);
 
+        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+        const isMobile = isTouchDevice && canvas.width < 1024;
+
         // Wind + Round (top-center)
         ctx.fillStyle = COLORS.sailCream;
-        ctx.font = 'bold 14px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`Round ${round}`, canvas.width / 2, 25);
 
-        // Wind arrow
-        const windDir = wind > 0 ? '→' : '←';
-        const windStr = Math.abs(wind).toFixed(1);
-        ctx.font = '13px Inter, sans-serif';
-        ctx.fillText(`Wind: ${windStr} ${windDir}`, canvas.width / 2, 45);
+        if (isMobile) {
+            // Mobile: Round + Wind on one line
+            ctx.font = 'bold 13px Inter, sans-serif';
+            const windDir = wind > 0 ? '→' : '←';
+            const windStr = Math.abs(wind).toFixed(1);
+            ctx.fillText(`Round ${round}  ·  Wind ${windStr} ${windDir}`, canvas.width / 2, 25);
+        } else {
+            // Desktop: stacked
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.fillText(`Round ${round}`, canvas.width / 2, 25);
+
+            const windDir = wind > 0 ? '→' : '←';
+            const windStr = Math.abs(wind).toFixed(1);
+            ctx.font = '13px Inter, sans-serif';
+            ctx.fillText(`Wind: ${windStr} ${windDir}`, canvas.width / 2, 45);
+        }
 
         // Turn indicator
         const turnName = currentPlayer === 0 ? player1.name : player2.name;
         ctx.fillStyle = COLORS.sunsetGold;
         ctx.font = 'bold 16px Inter, sans-serif';
         const turnLabel = turnName === 'You' ? 'Your Turn' : `${turnName}'s Turn`;
-        ctx.fillText(turnLabel, canvas.width / 2, 70);
+        ctx.fillText(turnLabel, canvas.width / 2, isMobile ? 48 : 70);
 
-        // ESC hint (bottom-right)
-        ctx.fillStyle = 'rgba(245, 240, 232, 0.3)';
-        ctx.font = '11px Inter, sans-serif';
-        ctx.textAlign = 'right';
-        ctx.fillText('ESC = Pause', canvas.width - 16, canvas.height - 12);
+        if (isMobile) {
+            // Mobile: tappable gear button (top-right corner, below HP)
+            const gearSize = 32;
+            const gearX = canvas.width - gearSize - 12;
+            const gearY = 52;
+            this.pauseButtonBounds = { x: gearX, y: gearY, w: gearSize, h: gearSize };
+
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.12)';
+            ctx.beginPath();
+            ctx.arc(gearX + gearSize / 2, gearY + gearSize / 2, gearSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.font = '18px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.7)';
+            ctx.fillText('⚙️', gearX + gearSize / 2, gearY + gearSize / 2);
+        } else {
+            // Desktop: ESC hint (bottom-right)
+            this.pauseButtonBounds = null;
+            ctx.fillStyle = 'rgba(245, 240, 232, 0.3)';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('ESC = Pause', canvas.width - 16, canvas.height - 12);
+        }
     }
 
     drawPlayerHUD(x, y, player, alignLeft) {

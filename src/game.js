@@ -86,6 +86,17 @@ export class Game {
             const cx = (x - rect.left) * scaleX;
             const cy = (y - rect.top) * scaleY;
 
+            // Mobile pause gear button (during gameplay)
+            if ((this.state === STATES.AIM || this.state === STATES.FLIGHT) && this.renderer.pauseButtonBounds) {
+                const pb = this.renderer.pauseButtonBounds;
+                if (cx >= pb.x && cx <= pb.x + pb.w && cy >= pb.y && cy <= pb.y + pb.h) {
+                    this.audio.playClick();
+                    this._previousState = this.state;
+                    this.state = STATES.SETTINGS;
+                    return;
+                }
+            }
+
             if (this.state === STATES.MENU) {
                 const mode = this.ui.getMenuClick(cx, cy);
                 if (mode) {
