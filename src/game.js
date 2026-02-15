@@ -48,6 +48,9 @@ export class Game {
         this.isOnline = false;
         this.isLocalPlayerTurn = false;
 
+        // Toast notification
+        this._toast = null; // { text, expiresAt }
+
         this.players = [
             this.createShip('You', COLORS.warmBrown, '#E74C3C', true, 0.15),
             this.createShip('Captain Blackbeard', '#5C3A21', '#1A1A1A', false, 0.85),
@@ -466,6 +469,7 @@ export class Game {
                 // No opponent found within 40s — return to menu
                 this.isOnline = false;
                 this.state = STATES.MENU;
+                this.showToast('No opponent found — try again later!');
             },
         });
     }
@@ -601,6 +605,10 @@ export class Game {
         shooter.cannonAngle = angle;
         this.totalShots[1]++;
         this.audio.playCannon();
+    }
+
+    showToast(text, durationMs = 3000) {
+        this._toast = { text, expiresAt: Date.now() + durationMs };
     }
 
     scheduleAITurn() {
@@ -886,6 +894,31 @@ export class Game {
                 ctx.font = '14px Inter, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText(`Active: ${effect.emoji} ${effect.name}`, canvas.width / 2, 95);
+            }
+        }
+
+        // Toast notification overlay (renders on top of everything)
+        if (this._toast) {
+            if (Date.now() >= this._toast.expiresAt) {
+                this._toast = null;
+            } else {
+                const remaining = this._toast.expiresAt - Date.now();
+                const alpha = Math.min(1, remaining / 500); // fade out last 500ms
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.font = '15px Inter, sans-serif';
+                const textW = ctx.measureText(this._toast.text).width;
+                const padX = 24, padY = 12, h = 40;
+                const x = canvas.width / 2 - (textW + padX * 2) / 2;
+                const y = 16;
+                ctx.fillStyle = 'rgba(26, 26, 26, 0.9)';
+                this.ui.drawRoundedRect(x, y, textW + padX * 2, h, 8);
+                ctx.fill();
+                ctx.fillStyle = '#F5F0E8';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this._toast.text, canvas.width / 2, y + h / 2);
+                ctx.restore();
             }
         }
     }
