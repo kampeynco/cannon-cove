@@ -55,6 +55,14 @@ window.addEventListener('resize', () => {
     checkOrientation();
 });
 
+// visualViewport API — fires in more browsers than window resize
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+        resize();
+        checkOrientation();
+    });
+}
+
 // screen.orientation API — more reliable on Android than CSS
 if (screen.orientation) {
     screen.orientation.addEventListener('change', () => {
@@ -72,6 +80,21 @@ window.addEventListener('orientationchange', () => {
         checkOrientation();
     }, 300);
 });
+
+// Polling fallback for in-app browsers (Facebook, Instagram, TikTok)
+// These browsers often don't fire resize/orientationchange events on rotation
+let lastW = window.innerWidth;
+let lastH = window.innerHeight;
+setInterval(() => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    if (w !== lastW || h !== lastH) {
+        lastW = w;
+        lastH = h;
+        resize();
+        checkOrientation();
+    }
+}, 500);
 
 // Wait for fonts to load before starting the game
 // Loading screen covers the canvas until ready
