@@ -38,6 +38,7 @@ export const STATES = {
     LEADERBOARD: 'LEADERBOARD',
     PROFILE_SETUP: 'PROFILE_SETUP',
     MAGIC_LINK_SENT: 'MAGIC_LINK_SENT',
+    MATCHMAKING: 'MATCHMAKING',
 };
 
 // ─── Game Modes ────────────────────────────────────
@@ -45,6 +46,7 @@ export const MODES = {
     DUEL: 'DUEL',
     CREW_BATTLE: 'CREW_BATTLE',
     GHOST_FLEET: 'GHOST_FLEET',
+    HIGH_SEAS: 'HIGH_SEAS',
 };
 
 // ─── Physics ───────────────────────────────────────

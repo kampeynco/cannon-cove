@@ -13,6 +13,7 @@ export class UIManager {
     createMenuButtons() {
         this.menuButtons = [
             { id: 'duel', label: '⚔️  Duel', subtitle: 'Single Player vs AI', mode: MODES.DUEL, y: 0 },
+            { id: 'high_seas', label: '🌊  High Seas', subtitle: 'Online Battle', mode: MODES.HIGH_SEAS, y: 0 },
             { id: 'crew', label: '🏴‍☠️  Crew Battle', subtitle: 'Head to Head', mode: MODES.CREW_BATTLE, y: 0 },
             { id: 'ghost', label: '👻  Ghost Fleet', subtitle: 'Watch AI Battle', mode: MODES.GHOST_FLEET, y: 0 },
         ];
@@ -71,17 +72,24 @@ export class UIManager {
             btn.bounds = { x: cx - btnWidth / 2, y: by, w: btnWidth, h: btnHeight };
 
             const isPrimary = i === 0;
-            ctx.fillStyle = isPrimary ? COLORS.sunsetGold : COLORS.warmBrown;
+            const isOnline = btn.id === 'high_seas';
+
+            if (isOnline) {
+                // Distinct ocean-blue style for online mode
+                ctx.fillStyle = '#1A6FB5';
+            } else {
+                ctx.fillStyle = isPrimary ? COLORS.sunsetGold : '#2A2A2A';
+            }
             this.drawRoundedRect(cx - btnWidth / 2, by, btnWidth, btnHeight, 8);
             ctx.fill();
 
-            ctx.strokeStyle = isPrimary ? '#D4941E' : '#6B4226';
+            ctx.strokeStyle = isOnline ? '#135A8E' : (isPrimary ? '#D4941E' : '#444444');
             ctx.lineWidth = 2;
             this.drawRoundedRect(cx - btnWidth / 2, by, btnWidth, btnHeight, 8);
             ctx.stroke();
 
             // Button label
-            ctx.fillStyle = isPrimary ? COLORS.deepOcean : COLORS.sailCream;
+            ctx.fillStyle = (isPrimary || isOnline) ? '#FFFFFF' : COLORS.sailCream;
             ctx.font = `bold ${isPrimary ? (tiny ? 13 : compact ? 16 : 20) : (tiny ? 12 : compact ? 14 : 17)}px Inter, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -89,7 +97,7 @@ export class UIManager {
             ctx.fillText(btn.label, cx, labelY);
 
             // Subtitle
-            ctx.fillStyle = isPrimary ? 'rgba(11, 29, 58, 0.6)' : 'rgba(245, 240, 232, 0.7)';
+            ctx.fillStyle = (isPrimary || isOnline) ? 'rgba(255, 255, 255, 0.6)' : 'rgba(245, 240, 232, 0.7)';
             ctx.font = `${tiny ? 9 : compact ? 10 : 12}px Inter, sans-serif`;
             const subY = tiny ? by + btnHeight * 0.72 : compact ? by + btnHeight * 0.75 : by + btnHeight * 0.72;
             ctx.fillText(btn.subtitle, cx, subY);
@@ -406,12 +414,12 @@ export class UIManager {
             const isResume = btn.id === 'resume';
             const isExit = btn.id === 'exit';
             const isHtp = btn.id === 'howtoplay';
-            ctx.fillStyle = isResume ? COLORS.sunsetGold : isExit ? '#5C3A1E' : isHtp ? '#1A3A5C' : COLORS.warmBrown;
+            ctx.fillStyle = isResume ? COLORS.sunsetGold : isExit ? '#1A1A1A' : isHtp ? '#1A3A5C' : '#2A2A2A';
             this.drawRoundedRect(bounds.x, bounds.y, btnWidth, btnHeight, 8);
             ctx.fill();
 
             // Button border
-            ctx.strokeStyle = isResume ? '#D4941E' : isExit ? '#3D2512' : isHtp ? '#0F2840' : '#6B4226';
+            ctx.strokeStyle = isResume ? '#D4941E' : isExit ? '#333333' : isHtp ? '#0F2840' : '#444444';
             ctx.lineWidth = 2;
             this.drawRoundedRect(bounds.x, bounds.y, btnWidth, btnHeight, 8);
             ctx.stroke();
@@ -614,7 +622,7 @@ export class UIManager {
         // Back button (bottom-left)
         const backW = tiny ? 56 : compact ? 66 : 86;
         this.htpBackBounds = { x: 14, y: navY, w: backW, h: btnH };
-        ctx.fillStyle = COLORS.warmBrown;
+        ctx.fillStyle = '#2A2A2A';
         this.drawRoundedRect(this.htpBackBounds.x, navY, backW, btnH, 6);
         ctx.fill();
         ctx.fillStyle = COLORS.sailCream;
@@ -1151,6 +1159,106 @@ export class UIManager {
         const b = this._magicLinkBackBounds;
         if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return 'back';
         return null;
+    }
+
+    // ─── Matchmaking Screen ──────────────────────────
+    drawMatchmaking() {
+        const { ctx, canvas } = this;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // Dim overlay
+        ctx.fillStyle = 'rgba(5, 13, 26, 0.92)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Title
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = COLORS.sunsetGold;
+        ctx.font = 'bold 32px "Pirata One", Georgia, serif';
+        ctx.fillText('HIGH SEAS', cx, cy - 80);
+
+        // Animated dots
+        const dots = '.'.repeat(1 + Math.floor(Date.now() / 500) % 3);
+        ctx.fillStyle = COLORS.sailCream;
+        ctx.font = '18px Inter, sans-serif';
+        ctx.fillText(`Searching for opponent${dots}`, cx, cy - 30);
+
+        // Animated sonar ring
+        const pulse = (Date.now() % 2000) / 2000;
+        ctx.strokeStyle = `rgba(26, 111, 181, ${1 - pulse})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy + 30, 20 + pulse * 40, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Inner dot
+        ctx.fillStyle = '#1A6FB5';
+        ctx.beginPath();
+        ctx.arc(cx, cy + 30, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cancel button
+        const btnW = 140;
+        const btnH = 40;
+        const btnX = cx - btnW / 2;
+        const btnY = cy + 100;
+        this._matchmakingCancelBounds = { x: btnX, y: btnY, w: btnW, h: btnH };
+
+        ctx.fillStyle = 'rgba(245, 240, 232, 0.1)';
+        this.drawRoundedRect(btnX, btnY, btnW, btnH, 8);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(245, 240, 232, 0.3)';
+        ctx.lineWidth = 1;
+        this.drawRoundedRect(btnX, btnY, btnW, btnH, 8);
+        ctx.stroke();
+
+        ctx.fillStyle = COLORS.sailCream;
+        ctx.font = '14px Inter, sans-serif';
+        ctx.fillText('Cancel', cx, btnY + btnH / 2);
+    }
+
+    isMatchmakingCancelClick(x, y) {
+        if (!this._matchmakingCancelBounds) return false;
+        const b = this._matchmakingCancelBounds;
+        return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+    }
+
+    // ─── Turn Timer (HUD overlay for online play) ────
+    drawTurnTimer(secondsLeft, isLocalTurn) {
+        const { ctx, canvas } = this;
+        const x = canvas.width / 2;
+        const y = 50;
+        const radius = 18;
+        const TURN_DURATION = 20;
+
+        // Background circle
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(5, 13, 26, 0.7)';
+        ctx.fill();
+
+        // Progress arc
+        const progress = secondsLeft / TURN_DURATION;
+        const color = secondsLeft <= 5 ? '#E74C3C' : (isLocalTurn ? COLORS.sunsetGold : '#1A6FB5');
+        ctx.beginPath();
+        ctx.arc(x, y, radius - 2, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Time text
+        ctx.fillStyle = secondsLeft <= 5 ? '#E74C3C' : '#FFFFFF';
+        ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(secondsLeft, x, y);
+
+        // Turn indicator text below
+        ctx.fillStyle = COLORS.sailCream;
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillText(isLocalTurn ? 'Your turn' : 'Opponent\'s turn', x, y + radius + 14);
     }
 }
 

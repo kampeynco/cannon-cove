@@ -9,6 +9,7 @@ import { PowerUpSystem } from './powerups.js';
 import { SeaCreatures } from './creatures.js';
 import { UIManager } from './ui.js';
 import { saveMatch, isAuthenticatedSync, signInWithGoogle, signInWithEmail, refreshAuthCache, getLeaderboard, saveSettings, loadSettings, signOut, ensureSession, updateProfile, needsProfileSetup, ensurePlayer, onAuthStateChange, getCachedUsername, getPlayerProfile } from './supabase.js';
+import * as MP from './multiplayer.js';
 
 export class Game {
     constructor(canvas) {
@@ -41,6 +42,12 @@ export class Game {
         this.vfx = [];
         this.sinkProgress = null;
 
+        // Multiplayer state
+        this.onlineOpponentName = null;
+        this.turnTimeLeft = 0;
+        this.isOnline = false;
+        this.isLocalPlayerTurn = false;
+
         this.players = [
             this.createShip('You', COLORS.warmBrown, '#E74C3C', true, 0.15),
             this.createShip('Captain Blackbeard', '#5C3A21', '#1A1A1A', false, 0.85),
@@ -48,6 +55,7 @@ export class Game {
 
         this.input.onFire = (angle, power) => this.handleFire(angle, power);
         this.setupMenuClicks();
+        this._setupMultiplayerCallbacks();
 
         this.lastTime = performance.now();
         this.loop = this.loop.bind(this);
@@ -81,6 +89,20 @@ export class Game {
                     this.audio.init();
                     this.audio.unlock();
                     this.audio.playClick();
+
+                    // High Seas requires authentication
+                    if (mode === MODES.HIGH_SEAS) {
+                        if (!isAuthenticatedSync()) {
+                            alert('Sign in to battle online!');
+                            this.state = STATES.SIGNIN;
+                            return;
+                        }
+                        // Enter matchmaking
+                        this.state = STATES.MATCHMAKING;
+                        MP.joinQueue();
+                        return;
+                    }
+
                     this.startGame(mode);
                 } else if (this.ui.isHowToPlayClick(cx, cy)) {
                     this.audio.playClick();
@@ -233,6 +255,13 @@ export class Game {
                     this.audio.playClick();
                     this.state = STATES.MENU;
                 }
+            } else if (this.state === STATES.MATCHMAKING) {
+                // Cancel matchmaking
+                if (this.ui.isMatchmakingCancelClick && this.ui.isMatchmakingCancelClick(cx, cy)) {
+                    this.audio.playClick();
+                    MP.leaveQueue();
+                    this.state = STATES.MENU;
+                }
             } else if (this.state === STATES.AIM && !this.isCurrentPlayerAI()) {
                 // Fire button tap detection
                 const btnW = 90, btnH = 38;
@@ -282,6 +311,8 @@ export class Game {
                 hovering = !!(this.ui.getLeaderboardClick && this.ui.getLeaderboardClick(mx, my));
             } else if (this.state === STATES.MAGIC_LINK_SENT) {
                 hovering = !!(this.ui.getMagicLinkSentClick && this.ui.getMagicLinkSentClick(mx, my));
+            } else if (this.state === STATES.MATCHMAKING) {
+                hovering = !!(this.ui.isMatchmakingCancelClick && this.ui.isMatchmakingCancelClick(mx, my));
             }
 
             this.canvas.style.cursor = hovering ? 'pointer' : 'default';
@@ -334,6 +365,8 @@ export class Game {
         this.wind = (Math.random() - 0.5) * PHYSICS.windRange * 2;
         this.vfx = [];
         this.sinkProgress = null;
+        this.isOnline = mode === MODES.HIGH_SEAS;
+        this.matchSaved = false;
 
         // Set player names based on mode
         if (mode === MODES.GHOST_FLEET) {
@@ -342,6 +375,10 @@ export class Game {
         } else if (mode === MODES.CREW_BATTLE) {
             this.players[0].name = 'Player 1';
             this.players[1].name = 'Player 2';
+        } else if (mode === MODES.HIGH_SEAS) {
+            // Names set by _onMatchFound callback
+            this.players[0].name = 'You';
+            this.players[1].name = this.onlineOpponentName || 'Rival Captain';
         } else {
             this.players[0].name = 'You';
             this.players[1].name = 'Captain Blackbeard';
@@ -357,18 +394,75 @@ export class Game {
 
         if (this.mode === MODES.GHOST_FLEET) {
             this.scheduleAITurn();
+        } else if (this.mode === MODES.HIGH_SEAS) {
+            const info = MP.getMatchInfo();
+            if (info.isPlayer1) {
+                // Player 1 goes first (local player's turn)
+                this.isLocalPlayerTurn = true;
+                this.input.enable(this.players[0]);
+                MP.startTurnTimer();
+            } else {
+                // Player 2 waits for opponent's first shot
+                this.isLocalPlayerTurn = false;
+                this.input.disable();
+                MP.startTurnTimer();
+            }
         } else {
             this.input.enable(this.players[0]);
         }
     }
 
     resetGame() {
+        if (this.isOnline) {
+            MP.disconnect();
+        }
         this.state = STATES.MENU;
         this.input.disable();
         this.projectile.active = false;
         this.vfx = [];
         this.creatures.reset();
         this.matchSaved = false;
+        this.isOnline = false;
+        this.isLocalPlayerTurn = false;
+        this.onlineOpponentName = null;
+        this.turnTimeLeft = 0;
+    }
+
+    _setupMultiplayerCallbacks() {
+        MP.setCallbacks({
+            onMatchFound: ({ matchId, opponentName, opponentId, isPlayer1 }) => {
+                this.onlineOpponentName = opponentName;
+                this.startGame(MODES.HIGH_SEAS);
+            },
+            onOpponentFire: (angle, power) => {
+                // Opponent fired — animate on our canvas
+                if (this.state !== STATES.AIM) return;
+                MP.stopTurnTimer();
+                this.handleRemoteFire(angle, power);
+            },
+            onOpponentForfeit: () => {
+                MP.stopTurnTimer();
+                // Auto-win for local player
+                const opponent = this.players[1];
+                opponent.hp = 0;
+                this.state = STATES.VICTORY;
+                this.endTime = performance.now();
+                this.sinkProgress = { ship: opponent, progress: 0 };
+                this.audio.playVictory();
+                this._saveMatchResult();
+            },
+            onTurnTimeout: () => {
+                if (this.isLocalPlayerTurn && this.state === STATES.AIM) {
+                    // Auto-fire with random angle/power on timeout
+                    const randomAngle = 15 + Math.random() * 60;
+                    const randomPower = 3 + Math.random() * 8;
+                    this.handleFire(randomAngle, randomPower);
+                }
+            },
+            onTimerTick: (secondsLeft) => {
+                this.turnTimeLeft = secondsLeft;
+            },
+        });
     }
 
     _openAvatarPicker() {
@@ -431,19 +525,30 @@ export class Game {
             ? Math.round((this.totalHits[0] / this.totalShots[0]) * 100)
             : 0;
 
+        if (this.isOnline) {
+            // Save to both online_matches and regular matches table
+            const info = MP.getMatchInfo();
+            const winnerId = playerWon ? info.localPlayerId : info.opponentId;
+            await MP.saveOnlineMatchResult(winnerId, this.round, accuracy, elapsed);
+            MP.sendGameOver(winnerId);
+        }
+
         await saveMatch({
             won: playerWon,
             rounds: this.round,
             accuracy,
             durationSeconds: elapsed,
-            mode: { DUEL: 'duel', CREW_BATTLE: 'crew', GHOST_FLEET: 'ghost' }[this.mode] || 'duel',
-            opponentType: this.mode === MODES.CREW_BATTLE ? 'human' : 'ai',
+            mode: this.isOnline ? 'high_seas' : { DUEL: 'duel', CREW_BATTLE: 'crew', GHOST_FLEET: 'ghost' }[this.mode] || 'duel',
+            opponentType: (this.mode === MODES.CREW_BATTLE || this.isOnline) ? 'human' : 'ai',
         });
         await refreshAuthCache();
     }
 
     handleFire(angle, power) {
         if (this.state !== STATES.AIM) return;
+
+        // In online mode, only allow firing on local player's turn
+        if (this.isOnline && !this.isLocalPlayerTurn) return;
 
         const shooter = this.players[this.currentPlayer];
         const facingRight = shooter.facingRight;
@@ -458,6 +563,38 @@ export class Game {
 
         shooter.cannonAngle = angle;
         this.totalShots[this.currentPlayer]++;
+        this.audio.playCannon();
+
+        // Broadcast fire to opponent in online mode
+        if (this.isOnline) {
+            MP.stopTurnTimer();
+            MP.sendFire(angle, power);
+        }
+    }
+
+    /**
+     * Handle a fire event received from the remote opponent.
+     * Uses the opponent's ship (index 1) and mirrors the angle.
+     */
+    handleRemoteFire(angle, power) {
+        if (this.state !== STATES.AIM) return;
+
+        const shooter = this.players[1]; // Opponent is always player index 1
+        const facingRight = shooter.facingRight;
+        const effectiveAngle = facingRight ? angle : 180 - angle;
+
+        const launchX = shooter.x + (facingRight ? 30 : -30);
+        const launchY = shooter.y - 15;
+
+        // Make sure currentPlayer matches the opponent
+        this.currentPlayer = 1;
+
+        this.projectile.launch(launchX, launchY, effectiveAngle, power, this.wind);
+        this.state = STATES.FIRE;
+        this.input.disable();
+
+        shooter.cannonAngle = angle;
+        this.totalShots[1]++;
         this.audio.playCannon();
     }
 
@@ -537,11 +674,26 @@ export class Game {
             this.state = STATES.AIM;
             this.input.reset();
 
-            const isAI = this.isCurrentPlayerAI();
-            if (isAI) {
-                this.scheduleAITurn();
+            if (this.isOnline) {
+                // Online: determine if it's local player's turn
+                // In online mode, player 0 is always the local representation
+                // currentPlayer 0 = local player's turn, 1 = opponent's turn
+                const info = MP.getMatchInfo();
+                this.isLocalPlayerTurn = (this.currentPlayer === 0);
+
+                if (this.isLocalPlayerTurn) {
+                    this.input.enable(this.players[0]);
+                } else {
+                    this.input.disable();
+                }
+                MP.startTurnTimer();
             } else {
-                this.input.enable(this.players[this.currentPlayer]);
+                const isAI = this.isCurrentPlayerAI();
+                if (isAI) {
+                    this.scheduleAITurn();
+                } else {
+                    this.input.enable(this.players[this.currentPlayer]);
+                }
             }
         }, 600);
     }
@@ -683,6 +835,8 @@ export class Game {
             this.ui.drawSettings({ sound: this.audio.enabled });
         } else if (this.state === STATES.HOWTOPLAY) {
             this.ui.drawHowToPlay(this.htpPage);
+        } else if (this.state === STATES.MATCHMAKING) {
+            this.ui.drawMatchmaking();
         } else {
             // In-game HUD
             renderer.drawHUD({
@@ -698,8 +852,15 @@ export class Game {
                 const shooter = this.players[this.currentPlayer];
                 renderer.drawAimUI(shooter, this.input.angle, this.input.power, shooter.facingRight);
 
-                // Fire button
-                this.ui.drawFireButton(canvas.width / 2, canvas.height - 60);
+                // Fire button (only show if it's local player's turn in online mode)
+                if (!this.isOnline || this.isLocalPlayerTurn) {
+                    this.ui.drawFireButton(canvas.width / 2, canvas.height - 60);
+                }
+
+                // Turn timer for online play
+                if (this.isOnline && this.turnTimeLeft > 0) {
+                    this.ui.drawTurnTimer(this.turnTimeLeft, this.isLocalPlayerTurn);
+                }
 
                 // Trajectory preview if spyglass active
                 const effect = this.powerups.getActiveEffect(this.currentPlayer);
