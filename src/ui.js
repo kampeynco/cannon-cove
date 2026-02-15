@@ -105,7 +105,9 @@ export class UIManager {
             ctx.fillText(btn.subtitle, cx, subY);
         });
         // Desktop: top-right nav bar for secondary links
-        const isDesktop = canvas.width >= 700;
+        // Only show on wide non-touch screens (excludes phones and tablets)
+        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+        const isDesktop = canvas.width >= 1024 && !isTouchDevice;
 
         if (isDesktop) {
             // Top-right navigation bar
