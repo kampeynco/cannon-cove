@@ -125,7 +125,7 @@ export class UIManager {
             ctx.fillText(btn.label, bx + bw / 2, labelY);
 
             // Subtitle
-            ctx.fillStyle = (isPrimary || isOnline) ? 'rgba(255, 255, 255, 0.6)' : 'rgba(245, 240, 232, 0.7)';
+            ctx.fillStyle = (isPrimary || isOnline) ? 'rgba(255, 255, 255, 0.85)' : 'rgba(245, 240, 232, 0.9)';
             const subFont = isMobileGrid ? (tiny ? 8 : compact ? 9 : 10) : (tiny ? 9 : compact ? 10 : 12);
             ctx.font = `${subFont}px Inter, sans-serif`;
             const subY = by + bh * 0.72;
