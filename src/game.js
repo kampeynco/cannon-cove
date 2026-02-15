@@ -897,27 +897,52 @@ export class Game {
             }
         }
 
-        // Toast notification overlay (renders on top of everything)
+        // Toast card overlay (renders on top of everything)
         if (this._toast) {
             if (Date.now() >= this._toast.expiresAt) {
                 this._toast = null;
             } else {
                 const remaining = this._toast.expiresAt - Date.now();
-                const alpha = Math.min(1, remaining / 500); // fade out last 500ms
+                const alpha = Math.min(1, remaining / 600);
                 ctx.save();
                 ctx.globalAlpha = alpha;
-                ctx.font = '15px Inter, sans-serif';
-                const textW = ctx.measureText(this._toast.text).width;
-                const padX = 24, padY = 12, h = 40;
-                const x = canvas.width / 2 - (textW + padX * 2) / 2;
-                const y = 16;
-                ctx.fillStyle = 'rgba(26, 26, 26, 0.9)';
-                this.ui.drawRoundedRect(x, y, textW + padX * 2, h, 8);
+
+                // Dim backdrop
+                ctx.fillStyle = 'rgba(5, 13, 26, 0.6)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Card
+                const cardW = 320;
+                const cardH = 130;
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                const cardX = cx - cardW / 2;
+                const cardY = cy - cardH / 2;
+
+                ctx.fillStyle = 'rgba(20, 30, 48, 0.95)';
+                this.ui.drawRoundedRect(cardX, cardY, cardW, cardH, 12);
                 ctx.fill();
-                ctx.fillStyle = '#F5F0E8';
+                ctx.strokeStyle = COLORS.sunsetGold;
+                ctx.lineWidth = 2;
+                this.ui.drawRoundedRect(cardX, cardY, cardW, cardH, 12);
+                ctx.stroke();
+
+                // Icon
+                ctx.font = '32px serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(this._toast.text, canvas.width / 2, y + h / 2);
+                ctx.fillText('⚓', cx, cardY + 36);
+
+                // Title
+                ctx.fillStyle = COLORS.sunsetGold;
+                ctx.font = 'bold 17px "Pirata One", Georgia, serif';
+                ctx.fillText(this._toast.text, cx, cardY + 72);
+
+                // Subtitle
+                ctx.fillStyle = 'rgba(245, 240, 232, 0.5)';
+                ctx.font = '12px Inter, sans-serif';
+                ctx.fillText('Returning to port...', cx, cardY + 100);
+
                 ctx.restore();
             }
         }
