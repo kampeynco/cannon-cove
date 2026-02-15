@@ -57,6 +57,59 @@
 </head>
 
 <body>
+  <!-- In-app browser detection (Facebook, Instagram, TikTok, etc.) -->
+  <div id="inAppOverlay"
+    style="display:none;position:fixed;inset:0;z-index:99999;background:#0B1D3A;color:#F5F0E8;font-family:Inter,sans-serif;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;">
+    <div style="font-size:48px;margin-bottom:16px;">🏴‍☠️</div>
+    <h2 style="font-family:'Pirata One',Georgia,serif;font-size:28px;color:#F4A623;margin:0 0 12px;">Open in Your
+      Browser</h2>
+    <p style="font-size:15px;color:rgba(245,240,232,0.8);margin:0 0 24px;max-width:300px;">Cannon Cove works best in
+      Safari or Chrome. Tap below to open it there!</p>
+    <button id="inAppOpenBtn"
+      style="padding:12px 32px;background:#F4A623;color:#0B1D3A;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;">Open
+      in Browser</button>
+    <p id="inAppCopied" style="font-size:13px;color:rgba(245,240,232,0.5);margin:0;display:none;">✓ URL copied! Paste in
+      Safari or Chrome.</p>
+    <a href="#" id="inAppDismiss"
+      style="display:inline-block;margin-top:20px;color:rgba(245,240,232,0.5);font-size:13px;text-decoration:none;">Continue
+      here instead →</a>
+  </div>
+  <script>
+    (function () {
+      var ua = navigator.userAgent || '';
+      var isInApp = /FBAN|FBAV|Instagram|Line\/|Twitter|Snapchat|TikTok/i.test(ua);
+      if (!isInApp) return;
+
+      var overlay = document.getElementById('inAppOverlay');
+      overlay.style.display = 'flex';
+
+      var isAndroid = /Android/i.test(ua);
+      var url = window.location.href;
+
+      document.getElementById('inAppOpenBtn').addEventListener('click', function () {
+        if (isAndroid) {
+          // Android: force open in Chrome via intent
+          var intentUrl = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+          window.location.href = intentUrl;
+        } else {
+          // iOS: copy URL to clipboard and guide user
+          navigator.clipboard.writeText(url).then(function () {
+            document.getElementById('inAppCopied').style.display = 'block';
+            document.getElementById('inAppOpenBtn').textContent = 'URL Copied!';
+          }).catch(function () {
+            // Fallback: prompt
+            prompt('Copy this URL and paste in Safari:', url);
+          });
+        }
+      });
+
+      document.getElementById('inAppDismiss').addEventListener('click', function (e) {
+        e.preventDefault();
+        overlay.style.display = 'none';
+      });
+    })();
+  </script>
+
   <div id="rotateOverlay">
     <div class="rotate-content">
       <div class="rotate-icon">📱</div>
