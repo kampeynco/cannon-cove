@@ -63,13 +63,36 @@ export class UIManager {
         ctx.fillText('Aim. Fire. Plunder!', cx, tagY);
 
 
-        // Buttons
+        // Buttons — 2x2 grid on mobile, stacked on larger screens
         const startY = tagY + taglineH / 2 + taglineGap;
+        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+        const isMobileGrid = isTouchDevice && canvas.width < 1024;
 
         this.menuButtons.forEach((btn, i) => {
-            const by = startY + i * (btnHeight + btnGap);
+            let bx, by, bw, bh;
+
+            if (isMobileGrid) {
+                // 2x2 grid layout
+                const gridCols = 2;
+                const col = i % gridCols;
+                const row = Math.floor(i / gridCols);
+                bw = tiny ? 130 : compact ? 150 : 170;
+                bh = tiny ? 48 : compact ? 56 : 66;
+                const gapX = tiny ? 6 : compact ? 8 : 10;
+                const gapY = tiny ? 5 : compact ? 8 : 10;
+                const gridW = bw * gridCols + gapX;
+                bx = cx - gridW / 2 + col * (bw + gapX);
+                by = startY + row * (bh + gapY);
+            } else {
+                // Stacked layout (desktop/tablet)
+                bw = btnWidth;
+                bh = btnHeight;
+                bx = cx - btnWidth / 2;
+                by = startY + i * (btnHeight + btnGap);
+            }
+
             btn.y = by;
-            btn.bounds = { x: cx - btnWidth / 2, y: by, w: btnWidth, h: btnHeight };
+            btn.bounds = { x: bx, y: by, w: bw, h: bh };
 
             const isPrimary = i === 0;
             const isOnline = btn.id === 'high_seas';
@@ -82,31 +105,34 @@ export class UIManager {
             } else {
                 ctx.fillStyle = isPrimary ? COLORS.sunsetGold : '#2A2A2A';
             }
-            this.drawRoundedRect(cx - btnWidth / 2, by, btnWidth, btnHeight, 8);
+            this.drawRoundedRect(bx, by, bw, bh, 8);
             ctx.fill();
 
             ctx.strokeStyle = isOnline ? '#135A8E' : isGhost ? '#134048' : (isPrimary ? '#D4941E' : '#444444');
             ctx.lineWidth = 2;
-            this.drawRoundedRect(cx - btnWidth / 2, by, btnWidth, btnHeight, 8);
+            this.drawRoundedRect(bx, by, bw, bh, 8);
             ctx.stroke();
 
             // Button label
             ctx.fillStyle = (isPrimary || isOnline) ? '#FFFFFF' : COLORS.sailCream;
-            ctx.font = `bold ${isPrimary ? (tiny ? 13 : compact ? 16 : 20) : (tiny ? 12 : compact ? 14 : 17)}px Inter, sans-serif`;
+            const labelFont = isMobileGrid
+                ? (tiny ? 11 : compact ? 13 : 15)
+                : (isPrimary ? (tiny ? 13 : compact ? 16 : 20) : (tiny ? 12 : compact ? 14 : 17));
+            ctx.font = `bold ${labelFont}px Inter, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const labelY = tiny ? by + btnHeight * 0.35 : by + btnHeight * 0.38;
-            ctx.fillText(btn.label, cx, labelY);
+            const labelY = by + bh * 0.38;
+            ctx.fillText(btn.label, bx + bw / 2, labelY);
 
             // Subtitle
             ctx.fillStyle = (isPrimary || isOnline) ? 'rgba(255, 255, 255, 0.6)' : 'rgba(245, 240, 232, 0.7)';
-            ctx.font = `${tiny ? 9 : compact ? 10 : 12}px Inter, sans-serif`;
-            const subY = tiny ? by + btnHeight * 0.72 : compact ? by + btnHeight * 0.75 : by + btnHeight * 0.72;
-            ctx.fillText(btn.subtitle, cx, subY);
+            const subFont = isMobileGrid ? (tiny ? 8 : compact ? 9 : 10) : (tiny ? 9 : compact ? 10 : 12);
+            ctx.font = `${subFont}px Inter, sans-serif`;
+            const subY = by + bh * 0.72;
+            ctx.fillText(btn.subtitle, bx + bw / 2, subY);
         });
         // Desktop: top-right nav bar for secondary links
         // Only show on wide non-touch screens (excludes phones and tablets)
-        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
         const isDesktop = canvas.width >= 1024 && !isTouchDevice;
 
         if (isDesktop) {
@@ -179,7 +205,8 @@ export class UIManager {
             // Mobile: centered buttons below game modes
             // How to Play button
             const htpW = tiny ? 120 : compact ? 140 : 160;
-            const htpY = startY + this.menuButtons.length * (btnHeight + btnGap) + htpGap;
+            const lastBtn = this.menuButtons[this.menuButtons.length - 1];
+            const htpY = lastBtn.bounds.y + lastBtn.bounds.h + htpGap;
             this.howToPlayBounds = { x: cx - htpW / 2, y: htpY, w: htpW, h: htpH };
 
             ctx.fillStyle = 'rgba(245, 240, 232, 0.08)';
