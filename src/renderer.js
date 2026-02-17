@@ -928,7 +928,7 @@ export class Renderer {
         const count = Math.min(points.length, maxPoints);
 
         for (let i = 0; i < count; i++) {
-            const alpha = 0.4 * (1 - i / count);
+            const alpha = 0.9 * (1 - i / count);
             ctx.fillStyle = `rgba(244, 166, 35, ${alpha})`;
             ctx.beginPath();
             ctx.arc(points[i].x, points[i].y, 2, 0, Math.PI * 2);
@@ -1117,7 +1117,7 @@ export class Renderer {
         }
     }
 
-    // ─── Aim Controls (Gorillas-style dotted line) ─────
+    // ─── Aim Controls (Gorillas-style dotted line with power meter) ─────
     drawAimUI(ship, angle, power, facingRight) {
         const { ctx } = this;
         const dir = facingRight ? 1 : -1;
@@ -1129,7 +1129,25 @@ export class Renderer {
             ? -angle * (Math.PI / 180)
             : -(Math.PI - angle * (Math.PI / 180));
 
+        // ── Power-based color (white → green → red) ──
+        const powerT = Math.max(0, Math.min(1, (power - PHYSICS.minPower) / (PHYSICS.maxPower - PHYSICS.minPower)));
+        let r, g, b;
+        if (powerT < 0.5) {
+            // White → Green (0.0 – 0.5)
+            const t2 = powerT * 2;
+            r = Math.round(255 - 175 * t2);
+            g = Math.round(255 - 35 * t2);
+            b = Math.round(255 - 175 * t2);
+        } else {
+            // Green → Red (0.5 – 1.0)
+            const t2 = (powerT - 0.5) * 2;
+            r = Math.round(80 + 175 * t2);
+            g = Math.round(220 - 175 * t2);
+            b = Math.round(80 - 80 * t2);
+        }
 
+        const time = performance.now() / 1000;
+        const isHighPower = powerT > 0.8;
 
         // ── Dotted aim line from cannon ──
         const lineLength = 60 + (power / PHYSICS.maxPower) * 60;
@@ -1144,18 +1162,28 @@ export class Renderer {
             const alpha = 0.9 * (1 - t * 0.5);
             const radius = 2.2 - t * 0.8;
 
-            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            // Pulsing glow at high power
+            if (isHighPower) {
+                const pulse = 0.25 + Math.sin(time * 8 + i * 0.4) * 0.15;
+                const glowRadius = Math.max(radius, 0.8) + 3;
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${pulse})`;
+                ctx.beginPath();
+                ctx.arc(dx, dy, glowRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
             ctx.beginPath();
             ctx.arc(dx, dy, Math.max(radius, 0.8), 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // ── Angle label at end of dotted line ──
+        // ── Angle label at end of dotted line (tinted to match power) ──
         const labelDist = 10 + lineLength + 14;
         const lx = ox + Math.cos(aimRad) * labelDist;
         const ly = oy + Math.sin(aimRad) * labelDist;
 
-        ctx.fillStyle = COLORS.white;
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         ctx.font = 'bold 13px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
