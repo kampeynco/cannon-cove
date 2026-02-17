@@ -99,18 +99,31 @@ setInterval(() => {
 // Wait for fonts to load before starting the game
 // Loading screen covers the canvas until ready
 document.fonts.ready.then(async () => {
-    // Init Supabase and create anonymous session
-    initSupabase();
-    await ensureSession();
-    await refreshAuthCache();
+    // Init Supabase with timeout — game must load even if Supabase is down
+    try {
+        initSupabase();
+        await Promise.race([
+            (async () => {
+                await ensureSession();
+                await refreshAuthCache();
+            })(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase timeout')), 5000))
+        ]);
+    } catch (e) {
+        console.warn('Supabase init skipped:', e.message);
+    }
 
     const game = new Game(canvas);
     window.game = game;
 
-    // Load cloud-saved settings
-    const saved = await loadSettings();
-    if (saved && typeof saved.sound === 'boolean') {
-        game.audio.enabled = saved.sound;
+    // Load cloud-saved settings (non-blocking)
+    try {
+        const saved = await loadSettings();
+        if (saved && typeof saved.sound === 'boolean') {
+            game.audio.enabled = saved.sound;
+        }
+    } catch (e) {
+        console.warn('Settings load skipped:', e.message);
     }
 
     game.start();

@@ -912,6 +912,10 @@ export class Game {
             else if (v.type === 'explosion') renderer.drawExplosion(v.x, v.y, v.progress);
         });
 
+        // Show/hide Product Hunt badge based on state
+        const phBadge = document.getElementById('phBadge');
+        if (phBadge) phBadge.style.display = (this.state === STATES.MENU || this.state === STATES.VICTORY) ? 'block' : 'none';
+
         // State-specific UI
         if (this.state === STATES.MENU) {
             this.ui.drawMenu();
