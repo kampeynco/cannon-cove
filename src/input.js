@@ -57,9 +57,11 @@ export class InputManager {
         // Angle from drag direction
         this.angle = Math.max(5, Math.min(85, Math.atan2(dy, Math.abs(dx)) * (180 / Math.PI)));
 
-        // Power from drag distance
+        // Power from drag distance (lower sensitivity on touch for finer control)
         const dist = Math.sqrt(dx * dx + dy * dy);
-        this.power = Math.max(PHYSICS.minPower, Math.min(PHYSICS.maxPower, dist * 0.12));
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        const powerScale = isTouchDevice ? 0.07 : 0.12;
+        this.power = Math.max(PHYSICS.minPower, Math.min(PHYSICS.maxPower, dist * powerScale));
     }
 
     handleEnd() {
