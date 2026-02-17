@@ -48,6 +48,11 @@ export class Game {
         this.isOnline = false;
         this.isLocalPlayerTurn = false;
 
+        // Local turn timer (Duel/Crew Battle)
+        this._localTimer = null;
+        this._localTimeLeft = 0;
+        this._LOCAL_TURN_DURATION = 20;
+
         // Toast notification
         this._toast = null; // { text, expiresAt }
 
@@ -92,6 +97,7 @@ export class Game {
                 if (cx >= pb.x && cx <= pb.x + pb.w && cy >= pb.y && cy <= pb.y + pb.h) {
                     this.audio.playClick();
                     this._previousState = this.state;
+                    this._pauseLocalTimer();
                     this.state = STATES.SETTINGS;
                     return;
                 }
@@ -239,6 +245,7 @@ export class Game {
                 } else if (action === 'resume') {
                     this.audio.playClick();
                     this.state = this._previousState || STATES.AIM;
+                    this._resumeLocalTimer();
                 } else if (action === 'howtoplay') {
                     this.audio.playClick();
                     this.htpPage = 0;
@@ -357,9 +364,11 @@ export class Game {
             if (e.key === 'Escape') {
                 if (this.state === STATES.AIM || this.state === STATES.FLIGHT) {
                     this._previousState = this.state;
+                    this._pauseLocalTimer();
                     this.state = STATES.SETTINGS;
                 } else if (this.state === STATES.SETTINGS) {
                     this.state = this._previousState || STATES.AIM;
+                    this._resumeLocalTimer();
                 } else if (this.state === STATES.HOWTOPLAY) {
                     this.state = this.htpReturnState;
                 }
@@ -370,7 +379,6 @@ export class Game {
     startGame(mode) {
         this.mode = mode;
         this.state = STATES.AIM;
-        this.currentPlayer = 0;
         this.round = 1;
         this.turnCount = 0;
         this.totalShots = [0, 0];
@@ -381,6 +389,13 @@ export class Game {
         this.sinkProgress = null;
         this.isOnline = mode === MODES.HIGH_SEAS;
         this.matchSaved = false;
+
+        // Randomize first shot for Duel mode
+        if (mode === MODES.DUEL) {
+            this.currentPlayer = Math.random() < 0.5 ? 0 : 1;
+        } else {
+            this.currentPlayer = 0;
+        }
 
         // Set player names based on mode
         if (mode === MODES.GHOST_FLEET) {
@@ -411,18 +426,26 @@ export class Game {
         } else if (this.mode === MODES.HIGH_SEAS) {
             const info = MP.getMatchInfo();
             if (info.isPlayer1) {
-                // Player 1 goes first (local player's turn)
                 this.isLocalPlayerTurn = true;
                 this.input.enable(this.players[0]);
                 MP.startTurnTimer();
             } else {
-                // Player 2 waits for opponent's first shot
                 this.isLocalPlayerTurn = false;
                 this.input.disable();
                 MP.startTurnTimer();
             }
+        } else if (this.mode === MODES.DUEL) {
+            if (this.currentPlayer === 1) {
+                // AI goes first
+                this.scheduleAITurn();
+            } else {
+                this.input.enable(this.players[0]);
+                this._startLocalTimer();
+            }
         } else {
-            this.input.enable(this.players[0]);
+            // Crew Battle (human vs human)
+            this.input.enable(this.players[this.currentPlayer]);
+            this._startLocalTimer();
         }
     }
 
@@ -430,6 +453,7 @@ export class Game {
         if (this.isOnline) {
             MP.disconnect();
         }
+        this._stopLocalTimer();
         this.state = STATES.MENU;
         this.input.disable();
         this.projectile.active = false;
@@ -585,10 +609,12 @@ export class Game {
         this.totalShots[this.currentPlayer]++;
         this.audio.playCannon();
 
-        // Broadcast fire to opponent in online mode
+        // Stop timers
         if (this.isOnline) {
             MP.stopTurnTimer();
             MP.sendFire(angle, power);
+        } else {
+            this._stopLocalTimer();
         }
     }
 
@@ -620,6 +646,59 @@ export class Game {
 
     showToast(text, durationMs = 3000) {
         this._toast = { text, expiresAt: Date.now() + durationMs };
+    }
+
+    _startLocalTimer() {
+        this._stopLocalTimer();
+        this._localTimeLeft = this._LOCAL_TURN_DURATION;
+
+        this._localTimer = setInterval(() => {
+            this._localTimeLeft--;
+            if (this._localTimeLeft <= 0) {
+                this._stopLocalTimer();
+                // Auto-fire with random angle/power on timeout
+                if (this.state === STATES.AIM && !this.isCurrentPlayerAI()) {
+                    const randomAngle = 15 + Math.random() * 60;
+                    const randomPower = PHYSICS.minPower + Math.random() * (PHYSICS.maxPower - PHYSICS.minPower);
+                    this.handleFire(randomAngle, randomPower);
+                }
+            }
+        }, 1000);
+    }
+
+    _stopLocalTimer() {
+        if (this._localTimer) {
+            clearInterval(this._localTimer);
+            this._localTimer = null;
+        }
+        this._localTimeLeft = 0;
+        this._pausedTimeLeft = 0;
+    }
+
+    _pauseLocalTimer() {
+        if (this._localTimer) {
+            clearInterval(this._localTimer);
+            this._localTimer = null;
+            this._pausedTimeLeft = this._localTimeLeft;
+        }
+    }
+
+    _resumeLocalTimer() {
+        if (this._pausedTimeLeft > 0) {
+            this._localTimeLeft = this._pausedTimeLeft;
+            this._pausedTimeLeft = 0;
+            this._localTimer = setInterval(() => {
+                this._localTimeLeft--;
+                if (this._localTimeLeft <= 0) {
+                    this._stopLocalTimer();
+                    if (this.state === STATES.AIM && !this.isCurrentPlayerAI()) {
+                        const randomAngle = 15 + Math.random() * 60;
+                        const randomPower = PHYSICS.minPower + Math.random() * (PHYSICS.maxPower - PHYSICS.minPower);
+                        this.handleFire(randomAngle, randomPower);
+                    }
+                }
+            }, 1000);
+        }
     }
 
     scheduleAITurn() {
@@ -717,6 +796,10 @@ export class Game {
                     this.scheduleAITurn();
                 } else {
                     this.input.enable(this.players[this.currentPlayer]);
+                    // Start local turn timer for Duel and Crew Battle
+                    if (this.mode === MODES.DUEL || this.mode === MODES.CREW_BATTLE) {
+                        this._startLocalTimer();
+                    }
                 }
             }
         }, 600);
@@ -881,9 +964,11 @@ export class Game {
                     this.ui.drawFireButton(canvas.width / 2, canvas.height - 60);
                 }
 
-                // Turn timer for online play
+                // Turn timer
                 if (this.isOnline && this.turnTimeLeft > 0) {
                     this.ui.drawTurnTimer(this.turnTimeLeft, this.isLocalPlayerTurn);
+                } else if (!this.isOnline && this._localTimeLeft > 0 && !this.isCurrentPlayerAI()) {
+                    this.ui.drawTurnTimer(this._localTimeLeft, true);
                 }
 
                 // Trajectory preview if spyglass active
