@@ -10,6 +10,7 @@ import { SeaCreatures } from './creatures.js';
 import { UIManager } from './ui.js';
 import { saveMatch, isAuthenticatedSync, signInWithGoogle, signInWithEmail, refreshAuthCache, getLeaderboard, saveSettings, loadSettings, signOut, ensureSession, updateProfile, needsProfileSetup, ensurePlayer, onAuthStateChange, getCachedUsername, getPlayerProfile } from './supabase.js';
 import * as MP from './multiplayer.js';
+import { capture, captureException } from './posthog.js';
 
 export class Game {
     constructor(canvas) {
@@ -118,6 +119,7 @@ export class Game {
                             return;
                         }
                         // Enter matchmaking
+                        capture('matchmaking started');
                         this.state = STATES.MATCHMAKING;
                         MP.joinQueue();
                         return;
@@ -131,6 +133,7 @@ export class Game {
                     this.state = STATES.HOWTOPLAY;
                 } else if (this.ui.isLeaderboardClick && this.ui.isLeaderboardClick(cx, cy)) {
                     this.audio.playClick();
+                    capture('leaderboard viewed');
                     this.leaderboardData = null;
                     this.state = STATES.LEADERBOARD;
                     getLeaderboard().then(data => { this.leaderboardData = data || []; });
@@ -176,21 +179,25 @@ export class Game {
                 const action = this.ui.getSignInClick(cx, cy);
                 if (action === 'google') {
                     this.audio.playClick();
+                    capture('sign in attempted', { method: 'google' });
                     signInWithGoogle().then(({ data, error }) => {
                         if (error) {
                             console.error('[Auth] Google sign-in error:', error);
+                            captureException(new Error(error.message), { method: 'google' });
                             alert('Google sign-in failed: ' + error.message);
                         } else {
                             console.log('[Auth] Google sign-in redirect initiated', data);
                         }
                     }).catch(err => {
                         console.error('[Auth] Google sign-in exception:', err);
+                        captureException(err, { method: 'google' });
                         alert('Google sign-in failed. Check the console for details.');
                     });
                 } else if (action === 'email') {
                     this.audio.playClick();
                     const email = prompt('Enter your email for a magic link:');
                     if (email) {
+                        capture('sign in attempted', { method: 'email' });
                         this._magicLinkEmail = email;
                         signInWithEmail(email).then(() => {
                             this.state = STATES.MAGIC_LINK_SENT;
@@ -213,12 +220,18 @@ export class Game {
                     this._openAvatarPicker();
                 } else if (action === 'confirm' && this._profileCaptainName && this._profileCaptainName.length >= 2) {
                     this.audio.playClick();
+                    const savedName = this._profileCaptainName;
+                    const hadAvatar = !!this._profileAvatarFile;
                     updateProfile({
-                        username: this._profileCaptainName,
+                        username: savedName,
                         avatarFile: this._profileAvatarFile || null,
                     }).then(async () => {
                         await ensurePlayer();
                         await refreshAuthCache();
+                        capture('profile updated', {
+                            captain_name_set: true,
+                            avatar_uploaded: hadAvatar,
+                        });
                         this._profileCaptainName = '';
                         this._profileAvatarFile = null;
                         this._profileAvatarPreview = null;
@@ -390,6 +403,12 @@ export class Game {
         this.isOnline = mode === MODES.HIGH_SEAS;
         this.matchSaved = false;
 
+        // PostHog: track game start
+        capture('game started', {
+            game_mode: mode,
+            is_authenticated: isAuthenticatedSync(),
+        });
+
         // Randomize first shot for Duel mode
         if (mode === MODES.DUEL) {
             this.currentPlayer = Math.random() < 0.5 ? 0 : 1;
@@ -470,6 +489,11 @@ export class Game {
         MP.setCallbacks({
             onMatchFound: ({ matchId, opponentName, opponentId, isPlayer1 }) => {
                 this.onlineOpponentName = opponentName;
+                capture('match found', {
+                    match_id: matchId,
+                    opponent_name: opponentName,
+                    is_player1: isPlayer1,
+                });
                 this.startGame(MODES.HIGH_SEAS);
             },
             onOpponentFire: (angle, power) => {
@@ -577,14 +601,30 @@ export class Game {
             MP.sendGameOver(winnerId);
         }
 
+        const matchMode = this.isOnline ? 'high_seas' : { DUEL: 'duel', CREW_BATTLE: 'crew', GHOST_FLEET: 'ghost' }[this.mode] || 'duel';
+        const opponentType = (this.mode === MODES.CREW_BATTLE || this.isOnline) ? 'human' : 'ai';
+
         await saveMatch({
             won: playerWon,
             rounds: this.round,
             accuracy,
             durationSeconds: elapsed,
-            mode: this.isOnline ? 'high_seas' : { DUEL: 'duel', CREW_BATTLE: 'crew', GHOST_FLEET: 'ghost' }[this.mode] || 'duel',
-            opponentType: (this.mode === MODES.CREW_BATTLE || this.isOnline) ? 'human' : 'ai',
+            mode: matchMode,
+            opponentType,
         });
+
+        // PostHog: track match completion
+        capture('match completed', {
+            player_won: playerWon,
+            winner_name: winner?.name || 'unknown',
+            rounds: this.round,
+            accuracy_pct: accuracy,
+            duration_seconds: elapsed,
+            total_shots: this.totalShots[0] + this.totalShots[1],
+            game_mode: matchMode,
+            opponent_type: opponentType,
+        });
+
         await refreshAuthCache();
     }
 
@@ -608,6 +648,17 @@ export class Game {
         shooter.cannonAngle = angle;
         this.totalShots[this.currentPlayer]++;
         this.audio.playCannon();
+
+        // PostHog: track shot fired
+        capture('shot fired', {
+            angle: Math.round(angle),
+            power: Math.round(power * 10) / 10,
+            wind: Math.round(this.wind * 100) / 100,
+            round: this.round,
+            game_mode: this.mode,
+            is_online: this.isOnline,
+            player_index: this.currentPlayer,
+        });
 
         // Stop timers
         if (this.isOnline) {
@@ -836,6 +887,13 @@ export class Game {
                 if (collected) {
                     this.audio.playPowerUp();
                     this.vfx.push({ type: 'explosion', x: cratePos.x, y: cratePos.y, progress: 0 });
+                    // PostHog: track power-up collection
+                    capture('power up collected', {
+                        effect_name: collected.name || collected.type || 'unknown',
+                        player_index: this.currentPlayer,
+                        game_mode: this.mode,
+                        round: this.round,
+                    });
                     // Apply immediate effects
                     if (collected.heal) {
                         const shooter = this.players[this.currentPlayer];
@@ -911,10 +969,6 @@ export class Game {
             if (v.type === 'splash') renderer.drawSplash(v.x, v.y, v.progress);
             else if (v.type === 'explosion') renderer.drawExplosion(v.x, v.y, v.progress);
         });
-
-        // Show/hide Product Hunt badge based on state
-        const phBadge = document.getElementById('phBadge');
-        if (phBadge) phBadge.style.display = (this.state === STATES.MENU || this.state === STATES.VICTORY) ? 'block' : 'none';
 
         // State-specific UI
         if (this.state === STATES.MENU) {

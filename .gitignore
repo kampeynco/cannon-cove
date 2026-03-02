@@ -6,3 +6,6 @@ dist/
 .env.*
 my-video
 my-video/
+
+# Local Netlify folder
+.netlify

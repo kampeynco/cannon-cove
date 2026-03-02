@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { identifyUser, capture } from './posthog.js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -51,7 +52,30 @@ export function isAuthenticatedSync() {
 export async function refreshAuthCache() {
     if (!supabase) { _cachedUser = null; return; }
     const { data: { session } } = await supabase.auth.getSession();
+    const prevUser = _cachedUser;
     _cachedUser = session?.user || null;
+
+    // PostHog: identify authenticated (non-anonymous) users and fire sign-in event
+    if (_cachedUser && !_cachedUser.app_metadata?.is_anonymous) {
+        const wasAnonymous = !prevUser || prevUser.app_metadata?.is_anonymous;
+        const displayName = _cachedUser.user_metadata?.captain_name
+            || _cachedUser.user_metadata?.full_name
+            || _cachedUser.user_metadata?.name
+            || _cachedUser.email?.split('@')[0]
+            || null;
+
+        identifyUser(_cachedUser.id, {
+            email: _cachedUser.email || undefined,
+            name: displayName || undefined,
+        });
+
+        if (wasAnonymous) {
+            capture('user signed in', {
+                provider: _cachedUser.app_metadata?.provider || 'unknown',
+                has_name: !!displayName,
+            });
+        }
+    }
 }
 
 /** Get cached user's display name */
